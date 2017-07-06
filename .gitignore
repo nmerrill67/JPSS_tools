@@ -1,0 +1,13 @@
+*.txt
+*.csv
+*.h5
+*.pkt
+*.png
+*.docx
+data/*
+Matlab_tools/data/*
+Matlab_tools/SAVED_SCREENS/*
+Matlab_tools/DBD_XLS
+Matlab_tools/DBD_CSVs
+Matlab_tools/DBD_XML
+database_CSVs/*
