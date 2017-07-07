@@ -1,21 +1,3 @@
-
-*.csv
-*.h5
-*.pkt
-*.png
-*.docx
-Decom_tools/data/*
-Matlab_tools/data/*
-Matlab_tools/SAVED_SCREENS/*
-Matlab_tools/DBD_XLS/*
-Matlab_tools/DBD_CSVs/*
-Matlab_tools/DBD_XML/*
-Decom_tools/database_CSVs/*
-
-
-
-############# from Decom_tools/CXXdecom .gitignore #############################
-
 # Prerequisites
 *.d
 
@@ -75,7 +57,7 @@ Decom.vcxproj.user
 *.ipdb
 *.pch.codeanalysisast
 TAGS
-Decom_tools/CXXDecom/build/*
+build/*
 *.manifest
-Decom_tools/CXXDecom/build/makefile
-Decom_tools/CXXDecom/documentation/*
+build/makefile
+documentation/*
