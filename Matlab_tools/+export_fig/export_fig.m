@@ -248,7 +248,6 @@ function [imageData, alpha] = export_fig(varargin)
 % 22/03/17: Fixed issue #187: only set manual ticks when no exponent is present
 % 09/04/17: Added -linecaps option (idea by Baron Finer, issue #192)
 %}
-
     if nargout
         [imageData, alpha] = deal([]);
     end

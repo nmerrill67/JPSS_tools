@@ -5,6 +5,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     % DBname
     if ~exist('../Decom_tools/databases/scdatabase.csv', 'file') || isempty(handles.DBname)% if there is no DB for the decom, prompt for one by default
         handles = newDBfun(hObject, eventdata, handles); % update the handles pointer
+      
     else % give the option to use the existing one
         f = figure('name', 'Database Options');
         set(f, 'MenuBar', 'none')
@@ -32,6 +33,9 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         end
 
     end
+    
+    if isempty(handles.DBDptr), return; end      
+    
     % this python script calls Decom.exe, waits for it to exit, then this
     % script waits for the python to exit.
     system('cd ../Decom_tools && python GUI.pyw && cd ../Matlab_tools');

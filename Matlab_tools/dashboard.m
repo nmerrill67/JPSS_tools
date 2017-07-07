@@ -57,9 +57,6 @@ function dashboard_OpeningFcn(hObject, eventdata, handles, varargin)
     % Choose default command line output for dashboard
     handles.output = hObject;
 
-    if ~ismember(fullfile(pwd,'helperFunctions'), strsplit(path,';')) % check if helperFunctions dir is in the matlab path
-        path(path, fullfile(pwd,'helperFunctions')); % if not, add it
-    end
        
     handles.DBDptr = ''; % pointer to the read-in database definition table
 
