@@ -3,7 +3,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     % hObject, eventdata, handles - all things from normal GUI callbacks
     % newDBfun - function handle to a functions that updates the DBDptr and
     % DBname
-    if ~exist('../databases/scdatabase.csv', 'file') || isempty(handles.DBname)% if there is no DB for the decom, prompt for one by default
+    if ~exist('../Decom_tools/databases/scdatabase.csv', 'file') || isempty(handles.DBname)% if there is no DB for the decom, prompt for one by default
         handles = newDBfun(hObject, eventdata, handles); % update the handles pointer
     else % give the option to use the existing one
         f = figure('name', 'Database Options');
@@ -34,19 +34,28 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     end
     % this python script calls Decom.exe, waits for it to exit, then this
     % script waits for the python to exit.
-    system('cd .. && python GUI.pyw && cd Matlab_tools')
+    system('cd ../Decom_tools && python GUI.pyw && cd ../Matlab_tools');
   
-    if ~exist('../output', 'dir'), return; end % user stopped python execution of Decom.exe
+    if ~exist('../Decom_tools/output', 'dir'), return; end % user stopped python execution of Decom.exe
     
     % create directory tree for ease of use
-    f = dir('../output/*.pkt');
-    f = [f.name]; % all the pkt filenames in ../output\
+    f = dir('../Decom_tools/output/*.pkt');
+    f = [f.name]; % all the pkt filenames in ../Decom_tools/output\
     if isempty(f), return; end % user stopped py execution, or something like that
     
     
-    f2 = dir('../output/*.txt');
-    f2 = [f2.name]; % all the txt filenames in ../output
-    if isempty(f2), return; end % user stopped the cpp terminals from executing. So dont bother running the rest of the code
+    f2 = dir('../Decom_tools/output/*.txt');
+    f2 = [f2.name]; % all the txt filenames in ../Decom_tools/output
+    if isempty(f2)
+    % move the text files into the correct dir 
+        if ispc
+            system('move ..\Decom_tools\output\*.pkt ..\Decom_tools\binaryFiles');
+
+        else % linux
+            system('mv ../Decom_tools/output/*.pkt ../Decom_tools/binaryFiles');
+        end        
+        return
+    end % user stopped the cpp terminals from executing. So dont bother running the rest of the code
     
     
     vec = strsplit(f, '_');
@@ -69,8 +78,11 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     end
     
     % find out the time frame of the data
-    d = char(vec(end-3)); % start date of data yyyymmdd
-    date = [d(6:7) '-' d(8:9) '-' d(2:5)]; % now mm-dd-yyyy
+    d1 = char(vec(end-3)); % start date of data yyyymmdd
+    t1 = char(vec(end-2)); % start time HHMMSSF
+    d2 = char(vec(end-1)); % end date yymmd
+    t2 = char(vec(end));
+    date = [d1(6:7) '-' d1(8:9) '-' d1(2:5) '_' t1(2:end-1) '__' d2(6:7) '-' d2(8:9) '-' d2(2:5) '_' t2(2:end-5)]; % now mm-dd-yyyy_HHMMSS__mm-dd-yyyy_HHMMSS
     
     if ~exist(fullfile(pwd,'data', scid), 'dir') % make the dirs if they dont exist
         system(['mkdir ' fullfile(pwd,'data', scid)]);
@@ -101,6 +113,8 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
             system(['mkdir ' newDirName{i}]);
         end
     end
+    
+    
     % move the text files into the correct dir 
     if ispc
         for i = 1:length(newDirName)
@@ -109,9 +123,10 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
             else
                 wildcard = '*.txt ';
             end
-            system(['move ..\output\' wildcard newDirName{i}]); % move or mv removes the files from the dir they were in
+            system(['move ..\Decom_tools\output\' wildcard newDirName{i}]); % move or mv removes the files from the dir they were in
         end
-        system('del ..\output\*.pkt')
+        system('move ..\Decom_tools\output\*.pkt ..\Decom_tools\binaryFiles');
+
     else % linux
         for i = 1:length(newDirName)
             if strcmp(dataType{i}, 'Spacecraft_Data')
@@ -119,9 +134,9 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
             else
                 wildcard = '*.txt ';
             end            
-            system(['mv ../output/' wildcard newDirName{i} ' &']);
+            system(['mv ../Decom_tools/output/' wildcard newDirName{i}]);
         end
-        system('rm ../output/*.pkt &')
+        system('mv ../Decom_tools/output/*.pkt ../Decom_tools/binaryFiles');
     end
     
     msgbox(['Data files have been written to ' fullfile(pwd,'data', scid, date)])

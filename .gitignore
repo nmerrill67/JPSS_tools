@@ -4,10 +4,78 @@
 *.pkt
 *.png
 *.docx
-data/*
+Decom_tools/data/*
 Matlab_tools/data/*
 Matlab_tools/SAVED_SCREENS/*
-Matlab_tools/DBD_XLS
-Matlab_tools/DBD_CSVs
-Matlab_tools/DBD_XML
-database_CSVs/*
+Matlab_tools/DBD_XLS/*
+Matlab_tools/DBD_CSVs/*
+Matlab_tools/DBD_XML/*
+Decom_tools/database_CSVs/*
+
+
+
+############# from Decom_tools/CXXdecom .gitignore #############################
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+#Microsoft
+*.tlog
+*.log
+*.VC
+*.VC.db
+*.ilk
+*.pdb
+*.xlsx
+*.lastbuildstate
+*.idb
+*.ipch
+Decom.vcxproj.filters
+Decom.vcxproj.user
+*.opendb
+*.suo
+*.txt
+!CMakeLists.txt
+!ReadMe.txt
+*.enc
+*.xml
+*.lastcodeanalysissucceeded
+*.codeanalysis
+*.iobj
+*.ipdb
+*.pch.codeanalysisast
+TAGS
+Decom_tools/CXXDecom/build/*
+*.manifest
+Decom_tools/CXXDecom/build/makefile
+Decom_tools/CXXDecom/documentation/*

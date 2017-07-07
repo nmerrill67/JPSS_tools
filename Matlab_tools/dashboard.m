@@ -1,35 +1,35 @@
-function varargout = dashboard9(varargin)
-    % DASHBOARD9 MATLAB code for dashboard9.fig
-    %      DASHBOARD9, by itself, creates a new DASHBOARD9 or raises the existing
+function varargout = dashboard(varargin)
+    % DASHBOARD MATLAB code for dashboard.fig
+    %      DASHBOARD, by itself, creates a new DASHBOARD or raises the existing
     %      singleton*.
     %
-    %      H = DASHBOARD9 returns the handle to a new DASHBOARD9 or the handle to
+    %      H = DASHBOARD returns the handle to a new DASHBOARD or the handle to
     %      the existing singleton*.
     %
-    %      DASHBOARD9('CALLBACK',hObject,eventData,handles,...) calls the local
-    %      function named CALLBACK in DASHBOARD9.M with the given input arguments.
+    %      DASHBOARD('CALLBACK',hObject,eventData,handles,...) calls the local
+    %      function named CALLBACK in DASHBOARD.M with the given input arguments.
     %
-    %      DASHBOARD9('Property','Value',...) creates a new DASHBOARD9 or raises the
+    %      DASHBOARD('Property','Value',...) creates a new DASHBOARD or raises the
     %      existing singleton*.  Starting from the left, property value pairs are
-    %      applied to the GUI before dashboard9_OpeningFcn gets called.  An
+    %      applied to the GUI before dashboard_OpeningFcn gets called.  An
     %      unrecognized property name or invalid value makes property application
-    %      stop.  All inputs are passed to dashboard9_OpeningFcn via varargin.
+    %      stop.  All inputs are passed to dashboard_OpeningFcn via varargin.
     %
     %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
     %      instance to run (singleton)".
     %
     % See also: GUIDE, GUIDATA, GUIHANDLES
 
-    % Edit the above text to modify the response to help dashboard9
+    % Edit the above text to modify the response to help dashboard
 
-    % Last Modified by GUIDE v2.5 22-Jun-2017 13:35:48
+    % Last Modified by GUIDE v2.5 07-Jul-2017 13:01:54
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
     gui_State = struct('gui_Name',       mfilename, ...
                        'gui_Singleton',  gui_Singleton, ...
-                       'gui_OpeningFcn', @dashboard9_OpeningFcn, ...
-                       'gui_OutputFcn',  @dashboard9_OutputFcn, ...
+                       'gui_OpeningFcn', @dashboard_OpeningFcn, ...
+                       'gui_OutputFcn',  @dashboard_OutputFcn, ...
                        'gui_LayoutFcn',  [] , ...
                        'gui_Callback',   []);
     if nargin && ischar(varargin{1})
@@ -46,15 +46,15 @@ function varargout = dashboard9(varargin)
 end
 
 
-% --- Executes just before dashboard9 is made visible.
-function dashboard9_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before dashboard is made visible.
+function dashboard_OpeningFcn(hObject, eventdata, handles, varargin)
     % This function has no output args, see OutputFcn.
     % hObject    handle to figure
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    % varargin   command line arguments to dashboard9 (see VARARGIN)
+    % varargin   command line arguments to dashboard (see VARARGIN)
 
-    % Choose default command line output for dashboard9
+    % Choose default command line output for dashboard
     handles.output = hObject;
 
     if ~ismember(fullfile(pwd,'helperFunctions'), strsplit(path,';')) % check if helperFunctions dir is in the matlab path
@@ -77,7 +77,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = dashboard9_OutputFcn(hObject, eventdata, handles) 
+function varargout = dashboard_OutputFcn(hObject, eventdata, handles) 
     % varargout  cell array for returning output args (see VARARGOUT);
     % hObject    handle to figure
     % eventdata  reserved - to be defined in a future version of MATLAB

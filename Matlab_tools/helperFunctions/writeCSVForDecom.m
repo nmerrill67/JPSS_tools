@@ -10,30 +10,31 @@ function fname = writeCSVForDecom()
         f = strsplit(filename, '.');
         c = f(1);
         fname = c{1}; % filename with no extension
-        name1 = strcat('../database_CSVs/',fname, '.csv'); 
+        name1 = strcat('../Decom_tools/database_CSVs/',fname, '.csv'); 
 
         h = waitbar(0, '  ===>  Checking for existing database directive files  ===>   ');    
         
-        if ~exist(fullfile('../database_CSVs', strcat(fname, '.csv')), 'file') ... 
+        if ~exist(fullfile('../Decom_tools/database_CSVs', strcat(fname, '.csv')), 'file') ... 
                 || ~exist(fullfile(pwd, 'DBD_CSVs', strcat(fname, '.txt')), 'file')
             
-            waitbar(1/16, h, 'Checking for Databases')
+            try waitbar(1/16, h, 'Checking for Databases')
+            catch; end
 
             % this function is in the helperFunctions dir, but it is called in the
             % Matlab_tools root, so that is the working directory for this
             % function, hence referencing helperFunctions as a sub directory
-            if ~ismember(fullfile(pwd,'helperFunctions/myxlsread'), strsplit(path,';')) % check if myxlsread is in the matlab path
-                path(path, fullfile(pwd,'helperFunctions/myxlsread')); % if not, add it
+
+            try 
+                waitbar(1/8.5, h, 'No matching database found')
+                waitbar(1/8.25, h, 'Extracting database from Excel')
+            catch
             end
 
-            waitbar(1/8.5, h, 'No matching database found')
-
-            waitbar(1/8.25, h, 'Extracting database from Excel')
-            
             tmp = readtable(fullfile(fpath, filename), 'Sheet', 'Flight Tlm List', 'Range', 'C:R');
             
-            waitbar(1/8, h, 'Writing Permanent database files')  
-
+            try waitbar(1/8, h, 'Writing Permanent database files')  
+            catch; end
+            
             M = tmp{:,[1 6 8 9]}; % extract the cols we want
 
             M = M(all(cellfun(@numel, M), 2), :); % one liner to remove rows with missing cells
@@ -61,10 +62,13 @@ function fname = writeCSVForDecom()
             V = {'Mnemonic', 'Type', 'Packet', 'byte_bit'}; % column headers
 
             T = array2table(M, 'VariableNames', V); 
-            waitbar(1/4, h, 'Writing Permanent database files')
+            try waitbar(1/4, h, 'Writing Permanent database files')
+            catch; end
+
             % write csv for decom use
             writetable(T(2:end,:), name1) % first row is headers from excel, so cut it out
-            waitbar(1/2, h,'Writing Permanent database files')
+            try waitbar(1/2, h,'Writing Permanent database files')
+            catch; end
 
             %Now write the one for matlab use
             M = tmp{:, [14 16 1 3 4 6 8 9]};
@@ -83,23 +87,29 @@ function fname = writeCSVForDecom()
             disp hey
             writetable(T(2:end,:), name2, 'Delimiter', ';') % tab and comma didnt work because they exist in the DB
 
-            waitbar(3/4, h, 'Writing Permanent database files')
+            try waitbar(3/4, h, 'Writing Permanent database files')
+            catch; end
 
         end    
         
-        delete  ../databases/scdatabase.csv
-        waitbar(7/8, h, 'Placing database file for decommutation engine')
+        delete  ../Decom_tools/databases/scdatabase.csv
+        try waitbar(7/8, h, 'Placing database file for decommutation engine')
+        catch; end
+            
+            
         if ispc
-            system(['copy /Y ' fullfile('..\database_CSVs',strcat(fname, '.csv')) ' ..\databases\scdatabase.csv']); 
+            system(['copy /Y ' fullfile('..\Decom_tools\database_CSVs',strcat(fname, '.csv')) ' ..\Decom_tools\databases\scdatabase.csv']); 
         % put the csv in the right place with the right name for decom tool
         else
-            system(['cp -f' fullfile('../database_CSVs',strcat(fname, '.csv')) ' ../databases/scdatabase.csv']); 
+            system(['cp -f' fullfile('../Decom_tools/database_CSVs',strcat(fname, '.csv')) ' ../Decom_tools/databases/scdatabase.csv']); 
 
         end
                         
-        waitbar(1, h, 'Done')
-        delete(h)
-
+        try 
+            waitbar(1, h, 'Done')
+            delete(h)
+        catch
+        end
 end
 
 
