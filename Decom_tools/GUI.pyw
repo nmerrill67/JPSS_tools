@@ -11,6 +11,12 @@ from glob import glob
 import re
 import ttk
 
+if os.name=='posix': # UNIX machine
+    import shlex
+else:
+    from subprocess import CREATE_NEW_CONSOLE
+
+
 #import timeit # testing
 
 ######################
@@ -84,10 +90,12 @@ def oldScript(ins_string):
                     apStorageOffset = int(apStorageOffset[3]) + (int(apStorageOffset[2])*(2**8)) + (int(apStorageOffset[1])*(2**16)) + (int(apStorageOffset[0])*(2**24))
                     inputFileValues=RawAP_0[apStorageOffset:len(RawAP_0)]
                     ofile[RawAP].write(inputFileValues)
-            ofile[RawAP].close()
     # close the input file(s)
     f.close()
 
+    for RawAP in RawAPs:
+        if RawAP[0:length]==ins_string:
+            ofile[RawAP].close()
 
 ######################END h5 DECODE###################################
 
@@ -129,22 +137,44 @@ def relevantAPIDs(ins_string):
 #Call C++ with selected files
 def launchCXX(Lb1, allAPIDs, packetSelect):
     global root
+
+    cwd = os.getcwd()
+
     packetSelect.withdraw()
     sel_packetsI = Lb1.curselection()
     all_packets = Lb1.get(0,END)
     root.destroy()
+
     sel_packets = []
-    for i in sel_packetsI:
-        sel_packets.append(all_packets[i])                          
-    procs = []
-    if not os.path.isfile(os.path.join(os.getcwd(),"Decom.exe")):
-        executable = os.path.join(os.getcwd(),'CXXDecom/bin/x64/Decom.exe')
+    if len(sel_packetsI)==0:
+        sel_packets = all_packets
     else:
-        executable = 'Decom.exe'
+        for i in sel_packetsI:
+            sel_packets.append(all_packets[i])  
+
+    procs = []
+
+    if not os.path.isfile(os.path.join(os.getcwd(),"Decom")):
+        executable = os.path.join(cwd,'CXXDecom/bin/x64/Decom')
+    else:
+        executable = 'Decom'
+
+    if os.name=='posix':
+        isUNIX = True
+    else:
+        isUNIX = False
+
     for file in sel_packets:
         instrument = file.split('-')[0]
-        p = Popen([executable, instrument, os.path.join(os.getcwd(),"output/"+file), os.path.join(os.getcwd(),'databases/CXXParams.csv'), allAPIDs])
+        if isUNIX:
+            p = Popen(shlex.split("xterm -e " + executable + ' ' + instrument + ' ' \
+                +  os.path.join(cwd,"output/"+file) + ' ' + \
+                os.path.join(cwd ,'databases/CXXParams.csv') + ' ' +  allAPIDs))
+        else:
+            p = Popen([executable,instrument,os.path.join(cwd,"output/"+file) \
+                , os.path.join(cwd ,'databases/CXXParams.csv'), allAPIDs], creationflags=CREATE_NEW_CONSOLE)
         procs.append(p)
+
     for p in procs:
         p.wait() # wait until all of the Decom.exe instances exit to exit this script
     
@@ -153,14 +183,24 @@ def launchCXX(Lb1, allAPIDs, packetSelect):
 #Prepare to launch C++ to do the de-com     
 def callCXX (sel_apids, allAPIDs):  
     global outfile, root
-    with open(os.path.join(os.getcwd(),os.path.join(os.getcwd(), "databases/CXXParams.csv",'wb'))) as resultFile: #Write selected APIDs to file
+
+    if allAPIDs:
+        sel_apids = [-1] # when run on UNIX nachines Decom gets mad if CXXParams is empty
+
+    with open(os.path.join(os.getcwd(),"databases/CXXParams.csv"),'wb') as resultFile: #Write selected APIDs to file
         wr = csv.writer(resultFile, dialect='excel')
         wr.writerow(sel_apids)
         
     helv20 = tkFont.Font(family='Helvetica', size=20, weight='bold')
     helv9 = tkFont.Font(family='Helvetica', size=9)
 
+    def exitProtocol(): # help GUI code exit if UI is x'ed out
+        packetSelect.destroy()
+        exit
+        sys.exit()
+
     packetSelect = Toplevel(root)
+    packetSelect.protocol('WM_DELETE_WINDOW', exitProtocol)
     packetSelect.minsize(width=666, height=666)
     packetSelect.wm_title("Packet Select")
     Label(packetSelect, text="Packet Select").pack() 
@@ -219,7 +259,6 @@ def run2 (Lb1, apidwindow, apidVar, manualAPIDs):
     global offset
     apidwindow.withdraw()
     inputAPIDs = manualAPIDs.get()
-    print(offset)
     if inputAPIDs:
         sel_apids = [int(x) for x in inputAPIDs.split(',')]
     else:

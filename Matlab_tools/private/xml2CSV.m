@@ -112,8 +112,12 @@ function mi = fixConvRuleAndValAndByteBitAndUnpackRule(mi)
     numBits = str2double(mi.numBits);
     if mod(numBits, 8) % not U16, U32, Single or double precision (D3 or something) 
         rangeStart = num2str(leftoverBit);
-        rangeEnd = num2str(leftoverBit + numBits); 
-        bytebit = [bytebit ':' rangeStart '-' rangeEnd];
+        rangeEnd = num2str(leftoverBit + numBits - 1);
+        if rangeEnd==rangeStart % D1
+            bytebit = [bytebit ':' rangeStart];
+        else
+            bytebit = [bytebit ':' rangeStart '-' rangeEnd];
+        end
     end
     
     mi = rmfield(mi, 'startBit');
