@@ -10,7 +10,9 @@ function saveScreen()
     
     savename = inputdlg('Enter saved screen file name'); % popup box asking for filename
     if ~isempty(savename)
-        filename  = fullfile(pwd, 'SAVED_SCREENS', savename);
+        if ~exist('Screenshots_and_PPTX/Screenshots', 'dir'),  mkdir Screenshots_and_PPTX/Screenshots; end
+
+        filename  = fullfile(pwd, 'Screenshots_and_PPTX', savename);
         export_fig.export_fig(filename{1}, '-png'); % use the open source export_fig function (located in export_fig directory)
     else
         warndlg('No name selected!')

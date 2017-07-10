@@ -6,7 +6,7 @@
 *.docx
 Decom_tools/data/*
 Matlab_tools/data/*
-Matlab_tools/SAVED_SCREENS/*
+Matlab_tools/Screenshots_and_PPTX/*
 Matlab_tools/DBD_XLS/*
 Matlab_tools/DBD_CSVs/*
 Matlab_tools/DBD_XML/*

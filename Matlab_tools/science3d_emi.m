@@ -111,10 +111,6 @@ function science3d_emi_OpeningFcn(hObject, eventdata, handles, varargin)
             handles.chStrings{i} = ['Channel ',num2str(i-1)];
         end
     end
-
-    if ~ismember(fullfile(pwd,'helperFunctions'), strsplit(path,';')) % check if helperFunctions dir is in the matlab path
-        path(path, fullfile(pwd,'helperFunctions')); % if not, add it
-    end    
     
 %    set(handles.popupmenu1, 'String', handles.chStrings);
 
@@ -644,7 +640,8 @@ function pushbutton6_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-    saveScreen();
+   % saveScreen();
+   Test
 end
 
 function edit3_Callback(hObject, eventdata, handles)
