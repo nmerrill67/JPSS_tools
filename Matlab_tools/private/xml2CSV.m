@@ -22,23 +22,22 @@ function xml2CSV()
         return
     end
     
-    fnames = char(d.name); % all filenames
+    fnames = fullfile({d.folder},{d.name}); % all filenames with full path
+ 
     T = []; % cant preallocate. We dont know the size
     h = waitbar(0, 'Reading XML files');
-    len = size(fnames, 1);
-    
+    len = length(fnames);
     parfor i = 1:len % parallelized for loop is faster for large number of files
-        tmp = xml2Arr(fullfile(dname, strip(fnames(i,:))));
+        tmp = xml2Arr(fnames{i});
         if isempty(tmp), continue; end % useless file for decom
-        T = [T; xml2Arr(fullfile(dname, strip(fnames(i,:))))];
+        T = [T; tmp];
         waitbar((len-i)/len, h); % parfor starts with i = len? its weird
     end
-    
     delete(h)
     V = {'Mnemonic', 'Type', 'Packet', 'bit_byte', 'Units', 'Conversion', 'Description'};
     spl = strsplit(dname ,{'/','\'}); % split the dirname from the path for writing purposes
     writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
-        'VariableNames', V), ['../database_CSVs' spl{end} '.csv']); % fix the column order for decom engine 
+        'VariableNames', V), [spl{end} '.csv']); % fix the column order for decom engine 
 end
 
 function T = xml2Arr(file)
