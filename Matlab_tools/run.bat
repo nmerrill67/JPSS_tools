@@ -1,1 +1,1 @@
-matlab -nodesktop -nosplash -minimize -r dashboard9
+matlab -nodesktop -nosplash -minimize -r dashboard

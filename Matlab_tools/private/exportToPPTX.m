@@ -272,13 +272,13 @@ PPTXInfo.CONST.DEFAULT_DIMENSIONS  = [10 7.5];     % in inches
 
 
 %% Initialize PPTXInfo (if it's not initialized yet)
-if ~isfield(PPTXInfo,'fileOpen'),
+if ~isfield(PPTXInfo,'fileOpen')
     PPTXInfo.fileOpen   = false;
 end
 
 
 %% Parse inputs
-if nargin==0,
+if ~nargin
     action  = 'query';
 else
     action  = varargin{1};
@@ -286,23 +286,23 @@ end
 
 
 %% Set blank outputs
-if nargout>0,
+if nargout>0
     varargout   = cell(1,nargout);
 end
 
 
 %% Do what we are told to do...
-switch lower(action),
-    case 'new',
+switch lower(action)
+    case 'new'
         %% Check if there is PPTX already in progress
-        if PPTXInfo.fileOpen,
+        if PPTXInfo.fileOpen
             error('exportToPPTX:fileStillOpen','PPTX file %s already in progress. Save and close first, before starting new file.',PPTXInfo.fullName);
         end
         
         %% Check for additional input parameters
         PPTXInfo.dimensions     = getPVPair(varargin,'Dimensions',round(PPTXInfo.CONST.DEFAULT_DIMENSIONS));
         PPTXInfo.dimensions     = PPTXInfo.dimensions.*PPTXInfo.CONST.IN_TO_EMU;
-        if numel(PPTXInfo.dimensions)~=2,
+        if numel(PPTXInfo.dimensions)~=2
             error('exportToPPTX:badDimensions','Slide dimensions vector must have two values only: width x height');
         end
         
@@ -312,15 +312,15 @@ switch lower(action),
         PPTXInfo.description    = getPVPair(varargin,'Comments','');
         
         PPTXInfo.bgColor        = getPVPair(varargin,'BackgroundColor',[]);
-        if ~isempty(PPTXInfo.bgColor),
-            if ~isnumeric(PPTXInfo.bgColor) || numel(PPTXInfo.bgColor)~=3,
+        if ~isempty(PPTXInfo.bgColor)
+            if ~isnumeric(PPTXInfo.bgColor) || numel(PPTXInfo.bgColor)~=3
                 error('exportToPPTX:badProperty','Bad property value found in BackgroundColor');
             end
         end
         
         %% Obtain temp folder name
         tempName    = tempname;
-        while exist(tempName,'dir'),
+        while exist(tempName,'dir')
             tempName    = tempname;
         end
         
@@ -340,24 +340,24 @@ switch lower(action),
 
         
         
-    case 'open',
+    case 'open'
         %% Check if there is PPTX already in progress
-        if PPTXInfo.fileOpen,
+        if PPTXInfo.fileOpen
             error('exportToPPTX:fileStillOpen','PPTX file %s already in progress. Save and close first, before starting new file.',PPTXInfo.fullName);
         end
 
         %% Inputs
-        if nargin<2,
+        if nargin<2
             error('exportToPPTX:minInput','Second argument required: filename to create or open');
         end
         fileName    = varargin{2};
 
         %% Check input validity
         [filePath,fileName,fileExt]     = fileparts(fileName);
-        if isempty(filePath),
+        if isempty(filePath)
             filePath    = pwd;
         end
-        if ~strncmpi(fileExt,'.pptx',5),
+        if ~strncmpi(fileExt,'.pptx',5)
             fileExt     = cat(2,fileExt,'.pptx');
         end
         fullName            = fullfile(filePath,cat(2,fileName,fileExt));
@@ -365,7 +365,7 @@ switch lower(action),
         
         %% Obtain temp folder name
         tempName    = tempname;
-        while exist(tempName,'dir'),
+        while exist(tempName,'dir')
             tempName    = tempname;
         end
         
@@ -374,7 +374,7 @@ switch lower(action),
         PPTXInfo.tempName   = tempName;
         
         %% Check destination location/file
-        if exist(fullName,'file'),
+        if exist(fullName,'file')
             % Open
             openExistingPPTX(PPTXInfo);
         else
@@ -388,34 +388,34 @@ switch lower(action),
 
         
         
-    case 'addslide',
+    case 'addslide'
         %% Check if there is PPT to add to
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             error('exportToPPTX:addSlideFail','No PPTX in progress. Start new or open PPTX file using new or open commands');
         end
         
         %% Create new blank slide
-        if nargin>1,
+        if nargin>1
             PPTXInfo    = addSlide(PPTXInfo,varargin{2:end});
         else
             PPTXInfo    = addSlide(PPTXInfo);
         end
         
         %% Outputs
-        if nargout>0,
+        if nargout>0
             varargout{1}    = PPTXInfo.currentSlide;
         end
 
         
         
-    case 'switchslide',
+    case 'switchslide'
         %% Check if there is PPT to add to
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             error('exportToPPTX:switchSlideFail','No PPTX in progress. Start new or open PPTX file using new or open commands');
         end
                 
         %% Inputs
-        if nargin<2,
+        if nargin<2
             error('exportToPPTX:minInput','Second argument required: slide ID to switch to');
         end
         
@@ -423,63 +423,63 @@ switch lower(action),
         PPTXInfo    = switchSlide(PPTXInfo,varargin{2});
         
         %% Outputs
-        if nargout>0,
+        if nargout>0
             varargout{1}    = PPTXInfo.currentSlide;
         end
         
         
         
-    case 'addpicture',
+    case 'addpicture'
         %% Check if there is PPT to add to
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             error('exportToPPTX:addPictureFail','No PPTX in progress. Start new or open PPTX file using new or open commands');
         end
         
         %% Inputs
-        if nargin<2,
+        if nargin<2
             error('exportToPPTX:minInput','Second argument required: figure handle or filename or CDATA');
         end
         imgData     = varargin{2};
         
         %% Add image
-        if nargin>2,
+        if nargin>2
             PPTXInfo    = addPicture(PPTXInfo,imgData,varargin{3:end});
         else
             PPTXInfo    = addPicture(PPTXInfo,imgData);
         end
         
         
-    case 'addshape',
+    case 'addshape'
         %% Check if there is PPT to add to
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             error('exportToPPTX:addShapeFail','No PPTX in progress. Start new or open PPTX file using new or open commands');
         end
         
         %% Inputs
-        if nargin<3,
+        if nargin<3
             error('exportToPPTX:minInput','Two input argument required: X and Y data');
         end
         xData   = varargin{2};
         yData   = varargin{3};
         
         % Input error checking
-        if isempty(xData) || isempty(yData),
+        if isempty(xData) || isempty(yData)
             % Error condition
             error('exportToPPTX:badInput','addShape command requires non-empty X and Y data');
         end
         
-        if size(xData)~=size(yData),
-            % Error condition
+        if size(xData)~=size(yData)
+            % Error conditio
             error('exportToPPTX:badInput','addShape command requires X and Y data sizes to match');
         end
         
-        if numel(xData)==1 || numel(yData)==1,
+        if numel(xData)==1 || numel(yData)==1
             % Error condition
             error('exportToPPTX:badInput','addShape command requires at least two X and Y data point');
         end   
         
         % If needed, reshape data (dim 1 = segments of a single line, dim 2 = different lines)
-        if size(xData,1)==1,
+        if size(xData,1)==1
             xData   = reshape(xData,[],1);
             yData   = reshape(yData,[],1);
         end
@@ -489,47 +489,47 @@ switch lower(action),
         yData   = round(yData*PPTXInfo.CONST.IN_TO_EMU);
         
         %% Add custom geometry (lines in this case)
-        if nargin>3,
+        if nargin>3
             PPTXInfo    = addCustGeom(PPTXInfo,xData,yData,varargin{4:end});
         else
             PPTXInfo    = addCustGeom(PPTXInfo,xData,yData);
         end
         
         
-    case 'addnote',
+    case 'addnote'
         %% Check if there is PPT to add to
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             error('exportToPPTX:addNoteFail','No PPTX in progress. Start new or open PPTX file using new or open commands');
         end
         
         %% Inputs
-        if nargin<2,
+        if nargin<2
             error('exportToPPTX:minInput','Second argument required: text for the notes field');
         end
         notesText   = varargin{2};
         
         %% Add notes data
-        if nargin>2,
+        if nargin>2
             PPTXInfo    = addNotes(PPTXInfo,notesText,varargin{3:end});
         else
             PPTXInfo    = addNotes(PPTXInfo,notesText);
         end
         
         
-    case 'addtext',
+    case 'addtext'
         %% Check if there is PPT to add to
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             error('exportToPPTX:addTextFail','No PPTX in progress. Start new or open PPTX file using new or open commands');
         end
         
         %% Inputs
-        if nargin<2,
+        if nargin<2
             error('exportToPPTX:minInput','Second argument required: textbox contents');
         end
         boxText     = varargin{2};
         
         %% Add textbox
-        if nargin>2,
+        if nargin>2
             PPTXInfo    = addTextbox(PPTXInfo,boxText,varargin{3:end});
         else
             PPTXInfo    = addTextbox(PPTXInfo,boxText);
@@ -537,20 +537,20 @@ switch lower(action),
         
         
         
-    case 'addtable',
+    case 'addtable'
         %% Check if there is PPT to add to
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             error('exportToPPTX:addTableFail','No PPTX in progress. Start new or open PPTX file using new or open commands');
         end
         
         %% Inputs
-        if nargin<2,
+        if nargin<2
             error('exportToPPTX:minInput','Second argument required: table contents');
         end
         tableData   = varargin{2};
 
         %% Add table
-        if nargin>2,
+        if nargin>2
             PPTXInfo    = addTable(PPTXInfo,tableData,varargin{3:end});
         else
             PPTXInfo    = addTable(PPTXInfo,tableData);
@@ -558,15 +558,15 @@ switch lower(action),
 
         
         
-    case 'saveandclose',
+    case 'saveandclose'
         %% Check if there is PPT to save
-        if ~PPTXInfo.fileOpen,
+        if ~PPTXInfo.fileOpen
             warning('exportToPPTX:noFileOpen','No PPTX in progress. Nothing to save.');
             return;
         end
         
         %% Inputs
-        if nargin<2 && isempty(PPTXInfo.fullName),
+        if nargin<2 && isempty(PPTXInfo.fullName)
             error('exportToPPTX:minInput','For new presentation filename to save to is required');
         end
         
@@ -574,7 +574,7 @@ switch lower(action),
         exportToPPTX('close');
         
         %% Output
-        if nargout>0,
+        if nargout>0
             varargout{1}    = fullName;
         end
         
@@ -854,7 +854,7 @@ for ipara=1:numParas,
         %             (~isempty(paraText{min(ipara+1,numParas)}) && ipara+1<=numParas && paraText{min(ipara+1,numParas)}(1)=='-') ),
             addParaText(1)      = [];   % remove the actual character
             setNodeAttribute(pPr,{'marL',useMargin*PPTXInfo.CONST.IN_TO_EMU,'indent',-defMargin*PPTXInfo.CONST.IN_TO_EMU});
-            addNode(fileXML,pPr,'a:buChar',{'char','•'});   % TODO: add character control here
+            addNode(fileXML,pPr,'a:buChar',{'char','ï¿½'});   % TODO: add character control here
         end
         
         if length(paraText{ipara})>=2 && isequal(paraText{ipara}(1:2),'# '),

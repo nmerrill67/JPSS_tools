@@ -15,7 +15,7 @@ function [DBDptr, fname] = getCalibMat()
         return
     end
 
-    filename = fullfile(pwd, 'DBD_CSVs',strcat(fname, '.txt'));
+    filename = fullfile(pwd, '.DBD_CSVs',strcat(fname, '.txt'));
 
     h = waitbar(0, 'Excel file already loaded. Loading Database ...');
     % Parse each line of the data 

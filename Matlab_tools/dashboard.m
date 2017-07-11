@@ -695,10 +695,22 @@ end
 
 % --- Executes on button press in pushbutton11.% -- PLOT PUSHBUTTON MAIN
 % 
-function pushbutton11_Callback(hObject, eventdata, handles)
+function pushbutton11_Callback(varargin)
 % hObject    handle to pushbutton11 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+    if nargin==3 % normal calling from guimainfun
+        hObject = varargin{1};
+        eventdata = varargin{2};
+        handles = varargin{3};
+    else % called from saveAsPPTX
+        hObject = varargin{1};
+        eventdata = varargin{2};
+        handles = varargin{3};
+        
+    end
+
     pushbutton25_Callback(hObject, eventdata, handles) % clear plot to resolve random issues of things remaining
     if get(handles.radiobutton4, 'value') % if #3D plot requested
     % Used to Slice up Data
@@ -730,12 +742,12 @@ function pushbutton11_Callback(hObject, eventdata, handles)
         if strcmp(handles.edit6, 'End Col')
             set(handles.edit6, 'string', strcat({'End Col: '}, {num2str(handles.rows1)}));
         end
-        nSecs1 = handles.sec1(startInd); % seconds of slice start time period
+        %nSecs1 = handles.sec1(startInd); % seconds of slice start time period
          %   nSecs1_T = handles.sec_atms_total(startInd); % seconds of slice start time period
-        nSecs2 = handles.sec1(endInd); % seconds of slice end time period
+        %nSecs2 = handles.sec1(endInd); % seconds of slice end time period
 
-        startT = datestr(nSecs1/86400, 'HH:MM:SS.FFF'); % formatted tiem of day for slice start
-        stopT = datestr(nSecs2/86400, 'HH:MM:SS.FFF'); % formatted time of day for slice end
+        %startT = datestr(nSecs1/86400, 'HH:MM:SS.FFF'); % formatted tiem of day for slice start
+        %stopT = datestr(nSecs2/86400, 'HH:MM:SS.FFF'); % formatted time of day for slice end
 
 
          %   set(handles.text12, 'string', ['File Content: ', filestartdate, ' ', filestart, ' - ', filestopdate, ' ', filestop]);
@@ -763,7 +775,7 @@ function pushbutton11_Callback(hObject, eventdata, handles)
             end_col = handles.cols1;
             set(handles.edit6,'string',strcat({'End Col: '},{num2str(end_col)}));
         end
-        t = handles.sec1/86400+ handles.epoch + handles.dates1;
+        t = handles.sec1/86400 + handles.epoch + handles.dates1;
         surf(start_col:end_col, t(startInd:endInd), handles.telemdata1(startInd:endInd, start_col:end_col),...
             'EdgeColor','None', 'facecolor', 'flat');
         view(2);

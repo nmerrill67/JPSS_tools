@@ -16,7 +16,7 @@ function fname = writeCSVForDecom()
     h = waitbar(0, '  ===>  Checking for existing database directive files  ===>   ');    
 
     if ~exist(fullfile('../Decom_tools/database_CSVs', strcat(fname, '.csv')), 'file') ... 
-            || ~exist(fullfile(pwd, 'DBD_CSVs', strcat(fname, '.txt')), 'file')
+            || ~exist(fullfile(pwd, '.DBD_CSVs', strcat(fname, '.txt')), 'file')
 
         try waitbar(1/16, h, 'Checking for Databases')
         catch; end
@@ -67,6 +67,15 @@ function fname = writeCSVForDecom()
         catch; end
 
         % write csv for decom use
+        if ~exist('../Decom_tools/database_CSVs', 'dir')
+            mkdir ../Decom_tools/database_CSVs
+        end
+        if ~exist('../Decom_tools/databases', 'dir')
+            mkdir ../Decom_tools/databases
+        end
+        if ~exist('.DBD_CSVs', 'dir')
+            mkdir .DBD_CSVs
+        end
         writetable(T(2:end,:), name1) % first row is headers from excel, so cut it out
         try waitbar(1/2, h,'Writing Permanent database files')
         catch; end
@@ -80,12 +89,11 @@ function fname = writeCSVForDecom()
         %need dont have certain cells from the row, but most of the row
         %remains
 
-        name2 = strcat('DBD_CSVs/',fname, '.txt');
+        name2 = strcat('.DBD_CSVs/',fname, '.txt');
         V = {'units', 'conversion', 'mnemonic', 'description',...
             'SS', 'type', 'APID', 'byte_bit'};
         T = array2table(M, 'VariableNames', V); 
 
-        disp hey
         writetable(T(2:end,:), name2, 'Delimiter', ';') % tab and comma didnt work because they exist in the DB
 
         try waitbar(3/4, h, 'Writing Permanent database files')
@@ -93,7 +101,9 @@ function fname = writeCSVForDecom()
 
     end    
 
-    delete  ../Decom_tools/databases/scdatabase.csv
+    if exist('../Decom_tools/databases/scdatabase.csv', 'file')
+        delete  ../Decom_tools/databases/scdatabase.csv
+    end
     try waitbar(7/8, h, 'Placing database file for decommutation engine')
     catch; end
 
@@ -102,7 +112,7 @@ function fname = writeCSVForDecom()
         system(['copy /Y ' fullfile('..\Decom_tools\database_CSVs',strcat(fname, '.csv')) ' ..\Decom_tools\databases\scdatabase.csv']); 
     % put the csv in the right place with the right name for decom tool
     else
-        system(['cp -f' fullfile('../Decom_tools/database_CSVs',strcat(fname, '.csv')) ' ../Decom_tools/databases/scdatabase.csv']); 
+        system(['cp -f ' fullfile('../Decom_tools/database_CSVs', [fname '.csv']) ' ../Decom_tools/databases/scdatabase.csv']); 
 
     end
 

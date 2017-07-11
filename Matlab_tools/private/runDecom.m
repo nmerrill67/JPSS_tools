@@ -88,6 +88,8 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     t2 = char(vec(end));
     date = [d1(6:7) '-' d1(8:9) '-' d1(2:5) '_' t1(2:end-1) '__' d2(6:7) '-' d2(8:9) '-' d2(2:5) '_' t2(2:end-5)]; % now mm-dd-yyyy_HHMMSS__mm-dd-yyyy_HHMMSS
     
+    if ~exist(fullfile(pwd, 'data'), 'dir'), system(['mkdir ' fullfile(pwd,'data')]); end
+    
     if ~exist(fullfile(pwd,'data', scid), 'dir') % make the dirs if they dont exist
         system(['mkdir ' fullfile(pwd,'data', scid)]);
     end
