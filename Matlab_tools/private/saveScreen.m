@@ -1,4 +1,4 @@
-function saveScreen()
+function saveScreen(prevPath, plotfun, textbox, fig, time, hObject, eventdata, handles)
 % shared function for taking good quality pictures of the current figure
 % screen. It is basically a shared callback function for all tool screens
 
@@ -43,7 +43,7 @@ function saveScreen()
         end
         
     else
-        saveAsPPTX
+        saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, handles)
     end
         
     function b3Callback(src, event)

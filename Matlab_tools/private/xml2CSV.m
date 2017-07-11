@@ -27,17 +27,19 @@ function xml2CSV()
     T = []; % cant preallocate. We dont know the size
     h = waitbar(0, 'Reading XML files');
     len = length(fnames);
-    parfor i = 1:len % parallelized for loop is faster for large number of files
+    tic
+    for i = 1:len 
         tmp = xml2Arr(fnames{i});
+        waitbar(i/len, h); % parfor starts with i = len? its weird
         if isempty(tmp), continue; end % useless file for decom
         T = [T; tmp];
-        waitbar((len-i)/len, h); % parfor starts with i = len? its weird
     end
+    toc
     delete(h)
     V = {'Mnemonic', 'Type', 'Packet', 'bit_byte', 'Units', 'Conversion', 'Description'};
     spl = strsplit(dname ,{'/','\'}); % split the dirname from the path for writing purposes
     writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
-        'VariableNames', V), [spl{end} '.csv']); % fix the column order for decom engine 
+        'VariableNames', V), ['../Decom_tools/.database_CSVs/', spl{end} '.csv']); % fix the column order for decom engine 
 end
 
 function T = xml2Arr(file)
@@ -60,7 +62,7 @@ function T = xml2Arr(file)
     m = s.applicationPacket.userFieldsSegment.userField;
     T = string(zeros(length(m), 7)); % preallocate array
     
-    for i = 1:length(m)
+    parfor i = 1:length(m) % parallel for loop slightly faster for large xml folders
         mi = fixConvRuleAndValAndByteBitAndUnpackRule(m{i}); % fix up the struct to a useable format
         mi.Packet = ['APID' repelem('0' ,4-length(apid)) apid]; % APID
         tmp = struct2cell(mi);
@@ -204,7 +206,7 @@ function [children,ptext,textflag] = parseChildNodes(theNode)
     if hasChildNodes(theNode)
         childNodes = getChildNodes(theNode);
         numChildNodes = getLength(childNodes);
-
+        
         for count = 1:numChildNodes
             theChild = item(childNodes,count-1);
             [text,name,attr,childs,textflag] = getNodeData(theChild);

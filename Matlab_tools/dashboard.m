@@ -644,8 +644,28 @@ function screen_copy_button_Callback(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
 
     % all pictures saved to ./SAVED_SCREENS
+    
+    
+    tmp = strsplit(get(handles.edit3, 'string'), ':'); % # slices
+    handles.slices = str2double(tmp{2});
 
-    saveScreen();
+    handles.index1 = floor((handles.rows1)/handles.slices);
+    currslice = str2double(get(handles.edit4, 'string'));   % current slice     
+
+    endInd = floor(handles.index1*currslice); % Last row index in slice
+
+    %First row index in slice
+    if currslice == 1
+        startInd = 1;
+    else
+        startInd = handles.index1 * (currslice - 1);
+    end
+
+    t = [handles.sec1(startInd)/86400 + handles.epoch + handles.dates1(startInd);...
+        handles.sec1(endInd)/86400 + handles.epoch + handles.dates1(endInd)];
+    
+    saveScreen(handles.prevPath1, @pushbutton11_Callback, handles.text24, handles.figure1...
+        , t, hObject, eventdata, handles);
 end
 
 
@@ -704,11 +724,12 @@ function pushbutton11_Callback(varargin)
         hObject = varargin{1};
         eventdata = varargin{2};
         handles = varargin{3};
+        telemdata1 = handles.telemdata1;
     else % called from saveAsPPTX
         hObject = varargin{1};
         eventdata = varargin{2};
         handles = varargin{3};
-        
+        telemdata1 = varargin{4};
     end
 
     pushbutton25_Callback(hObject, eventdata, handles) % clear plot to resolve random issues of things remaining
@@ -770,19 +791,21 @@ function pushbutton11_Callback(varargin)
 
         end_col = str2double(tmp{1});
 
-
         if(end_col>handles.cols1)
             end_col = handles.cols1;
             set(handles.edit6,'string',strcat({'End Col: '},{num2str(end_col)}));
         end
+        
+        
+        
         t = handles.sec1/86400 + handles.epoch + handles.dates1;
-        surf(start_col:end_col, t(startInd:endInd), handles.telemdata1(startInd:endInd, start_col:end_col),...
+        surf(t(startInd:endInd), start_col:end_col,rot90(telemdata1(startInd:endInd, start_col:end_col)),...
             'EdgeColor','None', 'facecolor', 'flat');
         view(2);
         handles.colormap = colormap('jet');
         handles.colorbar = colorbar('eastoutside');
         axis tight;
-        xlabel('Data Column');
+        ylabel('Data Column');
 
         %if strcmp(str{val}, 'Uncalibrated');
         zlabel('Counts');
@@ -790,10 +813,15 @@ function pushbutton11_Callback(varargin)
         %end
         title(['Slice ', num2str(currslice), ', Scans ', num2str(startInd), '-', num2str(endInd)]);
 
-        datetick('y', 'HH:MM:SS', 'keepticks', 'keeplimits' )
+        datetick('x', 'HH:MM:SS', 'keepticks', 'keeplimits' )
         %ylabel('Scan Number')
         
         set(gca, 'YtickLabelRotation', 45)
+        set(gca, 'XtickLabelRotation', 45)
+        set(gca, 'FontSize', 8)
+        set(gca, 'FontWeight', 'bold')
+        set(gca, 'XtickMode', 'auto')
+
 
     else % 2D plot
         try delete(handles.colorbar);catch; end % colorbar seems to remain otherwise
@@ -806,7 +834,7 @@ function pushbutton11_Callback(varargin)
 
             %x1label = 'Time (s)';
         else
-            x1 = handles.telemdata1(:, handles.indiciesA4 - 1); % minus 1 used to make up for adding 'time' to the list
+            x1 = telemdata1(:, handles.indiciesA4 - 1); % minus 1 used to make up for adding 'time' to the list
             x1label = handles.labels1(1, handles.indiciesA4 - 1);
         end
 
@@ -814,10 +842,10 @@ function pushbutton11_Callback(varargin)
         handles.y1label = y1label;
 
         if get(handles.radiobutton17, 'value') == 0 % raw counts
-            data = handles.telemdata1(:, handles.indiciesA5);
+            data = telemdata1(:, handles.indiciesA5);
             y1label = y1label';
         else % calibrated
-            [data, y1label] = calibrateData(handles.telemdata1(:, handles.indiciesA5), handles.DBDptr, y1label);
+            [data, y1label] = calibrateData(telemdata1(:, handles.indiciesA5), handles.DBDptr, y1label);
         end
 
         axes(handles.axes2)
@@ -842,6 +870,8 @@ function pushbutton11_Callback(varargin)
         set(handles.axes2, 'XMinorTick', 'on')
         set(handles.axes2, 'FontSize', 8)
         set(handles.axes2, 'FontWeight', 'bold')
+        set(handles.axes2, 'XtickMode', 'auto')
+
         
         if handles.indiciesA4 == 1 % x axis is  time
             datetick('x', 'HH:MM:SS', 'keeplimits', 'keepticks')%, 'keepticks')
@@ -2198,8 +2228,9 @@ function pushbutton26_Callback(hObject, eventdata, handles)
         radiobutton3_Callback(hObject, eventdata, handles)
         
     else
+        handles.rows1
         handles.defaultAnswer = answer; % save the response for next time
-        handles.slices = floor(handles.rows1/400);  % want 400 scans per view every time
+        handles.slices = ceil(handles.rows1/400);  % want 400 scans per view every time
         set(handles.edit3, 'string', ['# Slices: ' num2str(handles.slices)]); % these three edits have 
         %been reverted to text boxes, but I kept the names the same fo convenience
         set(handles.edit5, 'string', ['Start Col: ' answer{1}]);

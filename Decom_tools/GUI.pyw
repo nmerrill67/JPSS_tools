@@ -74,7 +74,7 @@ def oldScript(ins_string):
         for RawAP in RawAPs:
             outputfilename = RawAP + "_" + os.path.splitext(basename(f.filename))[0].split('d')[0] + firstfiledate + "_" + lastfiledate
             
-            outputfile[RawAP] = "output/"+basename(outputfilename)+".pkt"
+            outputfile[RawAP] = ".output/"+basename(outputfilename)+".pkt"
             if RawAP not in ofile and RawAP[0:length]==ins_string: # only unpack h5 files based on user selection to save time
                 ofile[RawAP] = open(outputfile[RawAP], 'wb')
                 outfile.append(outputfile[RawAP])
@@ -168,10 +168,10 @@ def launchCXX(Lb1, allAPIDs, packetSelect):
         instrument = file.split('-')[0]
         if isUNIX:
             p = Popen(shlex.split("xterm -e " + executable + ' ' + instrument + ' ' \
-                +  os.path.join(cwd,"output/"+file) + ' ' + \
+                +  os.path.join(cwd,".output/"+file) + ' ' + \
                 os.path.join(cwd ,'databases/CXXParams.csv') + ' ' +  allAPIDs))
         else:
-            p = Popen([executable,instrument,os.path.join(cwd,"output/"+file) \
+            p = Popen([executable,instrument,os.path.join(cwd,".output/"+file) \
                 , os.path.join(cwd ,'databases/CXXParams.csv'), allAPIDs], creationflags=CREATE_NEW_CONSOLE)
         procs.append(p)
 
@@ -187,7 +187,7 @@ def callCXX (sel_apids, allAPIDs):
     if allAPIDs:
         sel_apids = [-1] # when run on UNIX nachines Decom gets mad if CXXParams is empty
 
-    with open(os.path.join(os.getcwd(),"databases/CXXParams.csv"),'wb') as resultFile: #Write selected APIDs to file
+    with open(os.path.join(os.getcwd(),".databases/CXXParams.csv"),'wb') as resultFile: #Write selected APIDs to file
         wr = csv.writer(resultFile, dialect='excel')
         wr.writerow(sel_apids)
         
@@ -215,10 +215,10 @@ def callCXX (sel_apids, allAPIDs):
 def run (root, instrument):
     if not os.path.exists(os.path.join(os.getcwd(), "databases")): #Make output folders
         os.makedirs(os.path.join(os.getcwd(), "databases"))
-    if not os.path.exists(os.path.join(os.getcwd(), "output")):
-        os.makedirs(os.path.join(os.getcwd(), "output"))
-    if not os.path.exists(os.path.join(os.getcwd(), "binaryFiles")):
-        os.makedirs(os.path.join(os.getcwd(), "binaryFiles"))    
+    if not os.path.exists(os.path.join(os.getcwd(), ".output")):
+        os.makedirs(os.path.join(os.getcwd(), ".output"))
+    if not os.path.exists(os.path.join(os.getcwd(), ".binaryFiles")):
+        os.makedirs(os.path.join(os.getcwd(), ".binaryFiles"))    
     ins_string = switch(instrument.get())
     if ins_string == "CERES":
         pdsDecode(ins_string)

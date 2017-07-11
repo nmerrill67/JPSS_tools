@@ -1,16 +1,20 @@
-function saveAsPPTX(prevPath, plotfun, readRange, fig)
+function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, handles)
 %% Save multiple files to PPT (platform independent)
 % PrevPath - the starting path for file selection, fed in from plotting
 % tool function
 
 % plotfun - function handle to main plotting function
 
+% textbox -  the textbox that holds the main file name
+
 % readRange - range of new files to read in [startRow startCol endRow endCol]
 
 % fig - current figure. Could use gcf, but this is more robust
 
+% time - [startTime endTime]
+
     %% select files to export
-    
+
     [fname, fpath] = uigetfile(fullfile(prevPath, '*.txt'), ...
         'Select files to be placed into PPT with the current plot timeframe. Note that the plots will be placed in the Main/Science plot window', ...
         'Multiselect', 'on'); % Usually will be multiple channel files. Must be in same directory (i.e. same timeframe)
@@ -51,37 +55,62 @@ function saveAsPPTX(prevPath, plotfun, readRange, fig)
     exportToPPTX('addtext',title{2},'Position','Subtitle');
  
     
-    range = [nn2an(readRange(1), readRange(2)) ':' nn2an(readRange(3), readRange(4))]; % get the Excel-style range for readtable
+    %range = [nn2an(readRange(1), readRange(2)) ':' nn2an(readRange(3), readRange(4))]; % get the Excel-style range for readtable
     
-
     %% Add content slides
 
-    for i = 1:length(fname)
+    len = length(fname);
+    
+    for i = 1:len
+        
+        fnamei = fname{i};
+        
+        T = table2array(readtable(fullfile(fpath, fnamei), 'ReadVariableNames', false)); % get the specific data
+        
+        plotfun(hObject, eventdata, handles, T); % plot on the current main plot window 
+        set(textbox, 'String', fnamei)
+        
+        name = strsplit(fnamei, {'_', '.txt'}); % set up the slide title
+        name = [name{1} ' ' name{2} ', ' ...
+            datestr(time(1) ,'mm-dd HH:MM:SS') ' - ' datestr(time(2) ,'mm-dd HH:MM:SS')];
         
         exportToPPTX('addslide','Layout','Title and Content');
-        exportToPPTX('addtext','Channel 1','Position','Title');
+        exportToPPTX('addtext',name ,'Position','Title');
 
-        exportToPPTX('addpicture',gcf,'Position','Content Placeholder','Scale','max');
+        exportToPPTX('addpicture',fig,'Position','Content Placeholder','Scale','max'); % add the figure window
 
-        if ~exist('Screenshots_and_PPTX', 'dir'), mkdir Screenshots_and_PPTX; end
-
-        if ~exist('Screenshots_and_PPTX/PPTX', 'dir'),  mkdir Screenshots_and_PPTX/PPTX; end
-        
     end
+
+    
     %% Save As this presentation
-    newFile = exportToPPTX('save',['Screenshots_and_PPTX/PPTX' title{1}]);
+    
+    if ~exist('Screenshots_and_PPTX', 'dir'), mkdir Screenshots_and_PPTX; end
+
+    if ~exist('Screenshots_and_PPTX/PPTX', 'dir'),  mkdir Screenshots_and_PPTX/PPTX; end    
+
+    isCopy = 1;
+    
+    while isCopy
+        if exist(['Screenshots_and_PPTX/PPTX/' title{1} '.pptx'], 'file') || exist(['Screenshots_and_PPTX/PPTX/' title{1} '.ppt'], 'file')
+            t = inputdlg('A PPT with this name already exists, enter a new name for the file');
+            title{1} = t{1};
+        else
+            isCopy = 0;
+        end
+    end
+    exportToPPTX('save',['Screenshots_and_PPTX/PPTX/' title{1}]);
 
 
     %% Close presentation (and clear all temporary files)
     exportToPPTX('close');
 
-    fprintf('New file has been saved: <a href="matlab:open(''%s'')">%s</a>\n',newFile,newFile);
+    msgbox(['New file has been saved: ' pwd 'Screenshots_and_PPTX/PPTX/' title{1} '.pptx']);
     
     
-    function cr = nn2an(r, c)
-    % convert number, number format to alpha, number format
-        t = [floor((c - 1)/26) + 64 rem(c - 1, 26) + 65];
-        if(t(1)<65), t(1) = []; end
-        cr = [char(t) num2str(r)];    
-    end
+%     function cr = nn2an(r, c)
+%     % convert number, number format to alpha, number format
+%         t = [floor((c - 1)/26) + 64 rem(c - 1, 26) + 65];
+%         if(t(1)<65), t(1) = []; end
+%         cr = [char(t) num2str(r)];    
+%     end
 end

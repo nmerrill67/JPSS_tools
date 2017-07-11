@@ -234,11 +234,22 @@ end
 
 
 % --- Executes on button press in pushbutton2.  THIS IS THE PLOT PB
-function pushbutton2_Callback(hObject, eventdata, handles)
+function pushbutton2_Callback(varargin)
 % hObject    handle to pushbutton2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
  
+    if nargin==3 % normal calling from guimainfun
+        hObject = varargin{1};
+        eventdata = varargin{2};
+        handles = varargin{3};
+        counts = handles.counts;
+    else % called from saveAsPPTX
+        hObject = varargin{1};
+        eventdata = varargin{2};
+        handles = varargin{3};
+        counts = varargin{4};
+    end
 
     if ~(handles.main_file || handles.sc_file)
         h = errordlg('Load data first');
@@ -251,6 +262,8 @@ function pushbutton2_Callback(hObject, eventdata, handles)
  %   val=get(handles.popupmenu1,'Value');
     
     currslice = str2double(get(handles.edit4, 'string'));
+   
+    
     endInd = handles.index*currslice; % Last row index in slice
     if handles.main_file
         if endInd > length(handles.time)
@@ -262,11 +275,13 @@ function pushbutton2_Callback(hObject, eventdata, handles)
         end
     end
     %First row index in slice
+    
     if currslice == 1
         startInd = 1;
     else
         startInd = handles.index*(currslice - 1);
     end
+    
     
 %     if any(isnan(handles.counts(startInd:endInd,1)))
 %         tmp = find( ~isnan(handles.counts(startInd:endInd,1)) ); % want to omit NaN from data gaps, as they throw off the aux plots
@@ -414,7 +429,7 @@ function pushbutton2_Callback(hObject, eventdata, handles)
                 
       
  
-        handles.calcounts = handles.counts(:, :);
+        handles.calcounts = counts;
 %             case 'Channel 1'
 %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(1);
 %             case 'Channel 2'
@@ -566,11 +581,12 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 %     tmp = strsplit(get(handles.text4, 'string'), ':'); % # slices
 %     handles.slices = str2double(tmp{2});
 
-    edit4strnum = str2double(get(handles.edit4, 'string'));
-    if handles.main_file, slices = floor(handles.rows_atms/400);
-    elseif handles.sc_file, slices = floor(handles.rows_sc/400);
+    edit4strnum = str2double(get(handles.edit4, 'string')); % # Slices
+    if handles.main_file, slices = ceil(handles.rows_atms/400);
+    elseif handles.sc_file, slices = ceil(handles.rows_sc/400);
     else, return
     end
+    
     if edit4strnum == slices
         set(handles.edit4, 'string', '1');
     elseif edit4strnum > slices
@@ -640,8 +656,25 @@ function pushbutton6_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-   % saveScreen();
-   Test
+
+    currslice = str2double(get(handles.edit4, 'string'));
+    endInd = handles.index*currslice; % Last row index in slice
+
+    if endInd > length(handles.time)
+        endInd = length(handles.time);
+    end
+
+    %First row index in slice
+    if currslice == 1
+        startInd = 1;
+    else
+        startInd = handles.index*(currslice - 1);
+    end
+
+    t = [handles.time(startInd);handles.time(endInd)];
+    
+    saveScreen(handles.prevPath, @pushbutton2_Callback, handles.text2,handles.figure1...
+        , t, hObject, eventdata, handles);
 end
 
 function edit3_Callback(hObject, eventdata, handles)
