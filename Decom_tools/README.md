@@ -1,0 +1,1 @@
+Please launch GUI from this directory by ./PythonDecom/build/GUI

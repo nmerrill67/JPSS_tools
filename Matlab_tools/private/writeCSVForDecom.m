@@ -16,7 +16,7 @@ function fname = writeCSVForDecom()
     h = waitbar(0, '  ===>  Checking for existing database directive files  ===>   ');    
 
     if ~exist(fullfile('../Decom_tools/database_CSVs', strcat(fname, '.csv')), 'file') ... 
-            || ~exist(fullfile(pwd, '.DBD_CSVs', strcat(fname, '.txt')), 'file')
+            || ~exist(fullfile(pwd, 'DBD_CSVs', strcat(fname, '.txt')), 'file')
 
         try waitbar(1/16, h, 'Checking for Databases')
         catch; end
@@ -59,7 +59,7 @@ function fname = writeCSVForDecom()
         end
 
         M(2:end, end) = bytebit;            
-
+    
         V = {'Mnemonic', 'Type', 'Packet', 'byte_bit'}; % column headers
 
         T = array2table(M, 'VariableNames', V); 
@@ -73,8 +73,8 @@ function fname = writeCSVForDecom()
         if ~exist('../Decom_tools/databases', 'dir')
             mkdir ../Decom_tools/databases
         end
-        if ~exist('.DBD_CSVs', 'dir')
-            mkdir .DBD_CSVs
+        if ~exist('DBD_CSVs', 'dir')
+            mkdir DBD_CSVs
         end
         writetable(T(2:end,:), name1) % first row is headers from excel, so cut it out
         try waitbar(1/2, h,'Writing Permanent database files')
@@ -89,7 +89,7 @@ function fname = writeCSVForDecom()
         %need dont have certain cells from the row, but most of the row
         %remains
 
-        name2 = strcat('.DBD_CSVs/',fname, '.txt');
+        name2 = strcat('DBD_CSVs/',fname, '.txt');
         V = {'units', 'conversion', 'mnemonic', 'description',...
             'SS', 'type', 'APID', 'byte_bit'};
         T = array2table(M, 'VariableNames', V); 

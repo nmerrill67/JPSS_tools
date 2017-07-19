@@ -5,6 +5,7 @@
 *.png
 *.docx
 Decom_tools/data/*
+Decom_tools/output/*
 Matlab_tools/data/*
 Matlab_tools/Screenshots_and_PPTX/*
 Matlab_tools/DBD_XLS/*

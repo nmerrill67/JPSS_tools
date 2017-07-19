@@ -1,3 +1,3 @@
-[submodule "Decom_tools/CXXDecom"]
-	path = Decom_tools/CXXDecom
-	url = https://github.com/gabegordon/CXXDecom
+[submodule "CXXDecomQt"]
+	path = CXXDecomQt
+	url = https://github.com/gabegordon/CXXDecomQt.git

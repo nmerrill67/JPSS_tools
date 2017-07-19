@@ -3,8 +3,7 @@
 %
 % This script runs science3d_emi.fig, which imports science channel data
 % and creats a 3D histogram of the data, sliced up into a
-% specified number of slices. Data is generally viewed best around 200
-% scans/slice.
+% specified number of slices. 
 %
 %
 function varargout = science3d_emi(varargin)
@@ -22,7 +21,7 @@ function varargout = science3d_emi(varargin)
 %      existing singleton*.  Starting from the left, property value pairs are
 %      applied to the GUI before science3d_emi_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%%
+%
 % 
 %   for x = 1:10
 % 
@@ -248,7 +247,7 @@ function pushbutton2_Callback(varargin)
         hObject = varargin{1};
         eventdata = varargin{2};
         handles = varargin{3};
-        counts = varargin{4};
+        counts = varargin{4}(:,108:211);
     end
 
     if ~(handles.main_file || handles.sc_file)
@@ -306,12 +305,12 @@ function pushbutton2_Callback(varargin)
     
     if handles.sc_file % if auxillary file open
         
-        %%% NOTICE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%% NOTICE %%%%%%%%%%%%%%%
         % This part will really throw you off with y and x labels. The y
         % axis is vertical in matlab, but I am calling it the X axis, as
         % that is how am using it. It needs to be this way for the
         % dateticks
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%
                
         X1 = handles.time_sc(startIndAux:endIndAux); % set up local variable for total time in days
 
@@ -522,6 +521,7 @@ function pushbutton2_Callback(varargin)
         view(2);
         xlabel('Scan Position');
        % if strcmp(str{val}, 'Uncalibrated')
+       
         zlabel('Counts');
 %         else
 %             zlabel('Degrees K');

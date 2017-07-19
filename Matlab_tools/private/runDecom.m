@@ -36,11 +36,11 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     
     if isempty(handles.DBDptr), return; end      
     
-    % this python script calls Decom.exe, waits for it to exit, then this
+    % this c executable calls Decom, waits for it to exit, then this
     % script waits for the python to exit.
-    system('cd ../Decom_tools && python GUI.pyw && cd ../Matlab_tools');
+    system('cd ../Decom_tools && ./CXXDecomQt/build/bin/CXXDecomQt && cd ../Matlab_tools');
   
-    if ~exist('../Decom_tools/output', 'dir'), return; end % user stopped python execution of Decom.exe
+    if ~exist('../Decom_tools/output', 'dir'), return; end % user stopped python execution of CXXDecomQt
     
     % create directory tree for ease of use
     f = dir('../Decom_tools/output/*.pkt');

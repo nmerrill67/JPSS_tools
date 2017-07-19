@@ -40,6 +40,8 @@ function xml2CSV()
     spl = strsplit(dname ,{'/','\'}); % split the dirname from the path for writing purposes
     writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
         'VariableNames', V), ['../Decom_tools/.database_CSVs/', spl{end} '.csv']); % fix the column order for decom engine 
+%     writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
+%         'VariableNames', V), [spl{end} '.csv']); % fix the column order for decom engine     
 end
 
 function T = xml2Arr(file)

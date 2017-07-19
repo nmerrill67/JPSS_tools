@@ -1,5 +1,5 @@
 function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, handles)
-%% Save multiple files to PPT (platform independent)
+% Save multiple files to PPT (platform independent)
 % PrevPath - the starting path for file selection, fed in from plotting
 % tool function
 
@@ -13,7 +13,7 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
 
 % time - [startTime endTime]
 
-    %% select files to export
+    % select files to export
 
     [fname, fpath] = uigetfile(fullfile(prevPath, '*.txt'), ...
         'Select files to be placed into PPT with the current plot timeframe. Note that the plots will be placed in the Main/Science plot window', ...
@@ -24,7 +24,7 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
     fname = string(fname); % get a consistent length reading (to get number of files selected)
 
 
-    %% Open existing presentation
+    % Open existing presentation
     isOpen  = exportToPPTX();
     if ~isempty(isOpen)
         % If PowerPoint already started, then close first and then open a new one
@@ -40,7 +40,7 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
     % 	2. Title and Content
     % 	3. Title Slide
 
-    %% Add title slide
+    % Add title slide
 
     default = {'Instrument Anomaly Findings', 'JPPS Team'};
 
@@ -57,15 +57,20 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
     
     %range = [nn2an(readRange(1), readRange(2)) ':' nn2an(readRange(3), readRange(4))]; % get the Excel-style range for readtable
     
-    %% Add content slides
+    % Add content slides
 
     len = length(fname);
     
     for i = 1:len
         
         fnamei = fname{i};
+        T = readtable(fullfile(fpath, fnamei), 'delimiter',',', 'readVariableNames', 0); % get the specific data
         
-        T = table2array(readtable(fullfile(fpath, fnamei), 'ReadVariableNames', false)); % get the specific data
+        if any(isnan(T{:,end}))
+            T = T(:,1:(end-1));
+        end
+        
+        T = table2array(T);
         
         plotfun(hObject, eventdata, handles, T); % plot on the current main plot window 
         set(textbox, 'String', fnamei)
@@ -82,7 +87,7 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
     end
 
     
-    %% Save As this presentation
+    % Save As this presentation
     
     if ~exist('Screenshots_and_PPTX', 'dir'), mkdir Screenshots_and_PPTX; end
 
@@ -93,7 +98,11 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
     while isCopy
         if exist(['Screenshots_and_PPTX/PPTX/' title{1} '.pptx'], 'file') || exist(['Screenshots_and_PPTX/PPTX/' title{1} '.ppt'], 'file')
             t = inputdlg('A PPT with this name already exists, enter a new name for the file');
-            title{1} = t{1};
+            try 
+                title{1} = t{1}; 
+            catch
+                return % user exited
+            end
         else
             isCopy = 0;
         end
@@ -101,7 +110,7 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
     exportToPPTX('save',['Screenshots_and_PPTX/PPTX/' title{1}]);
 
 
-    %% Close presentation (and clear all temporary files)
+    % Close presentation (and clear all temporary files)
     exportToPPTX('close');
 
     msgbox(['New file has been saved: ' pwd 'Screenshots_and_PPTX/PPTX/' title{1} '.pptx']);
