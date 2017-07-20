@@ -22,7 +22,7 @@ function varargout = dashboard(varargin)
 
     % Edit the above text to modify the response to help dashboard
 
-    % Last Modified by GUIDE v2.5 07-Jul-2017 13:01:54
+    % Last Modified by GUIDE v2.5 20-Jul-2017 11:46:51
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -157,9 +157,9 @@ function popup2_Callback(hObject, eventdata, handles) % ATMS PopUp Select menue
     elseif (strcmp(popCheck,'ATMS_HK'))
         housekeeping;
     elseif (strcmp(popCheck,'ATMS_218'))
-        atms_ap218_fft;
+        fourierTransform;
     elseif (strcmp(popCheck,'ATMS_Dwell'))
-        atms_gui
+        dwell_fft_tool
     end
     guidata(hObject,handles);
 end
@@ -2255,4 +2255,14 @@ function radiobutton23_Callback(hObject, eventdata, handles)
         return
     end
     pushbutton14_Callback(hObject, eventdata, handles);
+end
+
+
+% --- Executes on button press in radiobutton24.
+function radiobutton24_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton24 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of radiobutton24
 end

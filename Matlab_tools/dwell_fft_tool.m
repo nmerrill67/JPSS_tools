@@ -27,8 +27,6 @@ function varargout = dwell_fft_tool(varargin)
 %      applied to the GUI before dwell_fft_tool_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
 %      stop.  All inputs are passed to dwell_fft_tool_OpeningFcn via varargin.
-%xls
-
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
@@ -36,7 +34,7 @@ function varargout = dwell_fft_tool(varargin)
 
 % Edit the above text to modify the response to help dwell_fft_tool
 
-% Last Modified by GUIDE v2.5 18-Jul-2017 16:58:42
+% Last Modified by GUIDE v2.5 19-Jul-2017 12:19:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -72,17 +70,18 @@ handles.output = hObject;
 handles.epoch = datenum('01-01-1958' ,'dd-mm-yyyy');
 
 
-% Sets expected frequencies for stem plots
-
+% Sets expected frequencies for stem plots. These are known frequencies
+% that have issues for ATMS. They can be changed via pushbutton15
 handles.main_x = [ 0.08,0.09,1.4,2.8,3.1,3.4,4.2,5.6,5.9,7.0,8.4,9,11.2,24.2 ];
-
 handles.comp_x = [ 0.14,0.16,2.47,4.93,5.45,6.12 ];
 
-handles.prevPath = fullfile(pwd, 'data');
-handles.playbackFlag = 0;
-handles.calibratedBefore = 0; % used to uncalibrate data since we cant keep two copys of a 20M long array
+handles.prevPath = fullfile(pwd, 'data'); % The previous path that the user selected. default is ./data 
+
 handles.delta_t = (8/3)/(148); % Sets time increment (sec) - fixed at 148 samples per scan
 
+dc = datacursormode(handles.figure1); % fix data cursor to show time/frequency
+set(dc, 'UpdateFcn', @dcUpdateDwellFFT)    
+set(dc, 'SnapToDataVertex', 'on')
 
 guidata(hObject, handles);
 % UIWAIT makes dwell_fft_tool wait for user response (see UIRESUME)
@@ -121,7 +120,19 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+function showDates(handles)
+% hlper function to show the file dates in text7 and text8. This is a
+% separate function because two functions use this capability
 
+    t1 = handles.time(1);
+    startT = datestr(t1, 'dd-mmm-yyyy HH:MM:SS.FFF');
+    stopT = datestr(handles.time(end), 'dd-mmm-yyyy HH:MM:SS.FFF');
+
+    set(handles.text7,'String',(['File Start: ', startT]));
+    set(handles.text8,'String',(['File Stop: ', stopT]));  
+    guidata(handles.text7, handles)
+    
+    
 % Plot button: Runs the code & plots figures based on inputs
 function h = pushbutton1_Callback(hObject, eventdata, handles) 
 % hObject    handle to pushbutton1 (see GCBO)
@@ -160,22 +171,7 @@ function h = pushbutton1_Callback(hObject, eventdata, handles)
 
     Num_points = length(handles.dwell);
     t1 = handles.time(1);
-    startT = datestr(t1, 'dd-mmm-yyyy HH:MM:SS.FFF');
-    stopT = datestr(handles.time(end), 'dd-mmm-yyyy HH:MM:SS.FFF');
-
-    set(handles.text7,'String',(['File Start: ', startT]));
-    set(handles.text8,'String',(['File Stop: ', stopT]));
-     
-    if get(handles.radiobutton4, 'value') % this is hard-coded but we could easily use the database method that dashboard an science_emi use to calibrate
-        handles.dwell  = handles.dwell * 0.021777 - 0.3888;
-        handles.calibratedBefore = 1; % Flag so we can undo it latetr if user unchecks the calibrated option since we cant keep two copies of this data (too big)
-    elseif ~get(handles.radiobutton4, 'value') && handles.calibratedBefore
-        % undo the calibration if the box has been unchecked
-        handles.dwell = (handles.dwell +0.3888) / 0.021777;
-        handles.calibratedBefore = 0; % reset the flag so we dont do this procedure again and corrupt the data
-    end
-        
-    
+    showDates(handles)    
     dt_days = handles.delta_t/86400; % converted to days 
     t = zeros(Num_points,1); % make this column major! This will make an order of magnitude speedup fr all calculations with t!
     t(:) = t1:dt_days:(t1 + dt_days*(Num_points-1)); % time vector. Need extra points since there are more dwell points than timestamps
@@ -196,12 +192,11 @@ function h = pushbutton1_Callback(hObject, eventdata, handles)
 
     nf=(Num_points/2)+1;  % Number of points in frequency plots 
     
-    fr = zeros(Num_points, 1);
-    fr(:) = (0:(Num_points))*delf; % freq vector
+    fr = zeros(nf, 1);
+    fr(:) = (0:(nf-1))*delf; % freq vector
     ff=fft(handles.dwell); % call to Matlab's Fast Fourier program
-    %f=ff(1:nf); % positive components
-
-    fmag=2*abs(ff)/Num_points; 
+    f=ff(1:nf); % positive components
+    fmag=2*abs(f)/Num_points; % see only positive spikes
 
     if get(handles.radiobutton5, 'value') % demod
         fmag = detrend(fmag); % remove the giant blob of data below the spikes by removeing a straight line fit of the data
@@ -232,14 +227,14 @@ function h = pushbutton1_Callback(hObject, eventdata, handles)
     % Changes frequency vector to adjust for new, sliced plots.
     handles.pointsPerSlice = round(Num_points/handles.slices);
 
-    handles.nf = round(handles.pointsPerSlice/2+1);
+    nf = round(handles.pointsPerSlice/2+1); % reassign for bottom plots
     
-    delf = (1/handles.nf)*(1/handles.delta_t); %frequency increment for fft
-    handles.fr = zeros(handles.nf, 1);
-    handles.fr(:) = (0:(handles.nf-1))*delf; % we need this extra line so that fr is column major. THis make an order of magnitude time difference
-    tic
+    delf = (1/nf)*(1/handles.delta_t); %frequency increment for fft
+    handles.fr = zeros(nf, 1);
+    handles.fr(:) = (0:(nf-1))*delf; % we need this extra line so that fr is column major. THis make an order of magnitude time difference
+    
     plotBottomWindows(handles);
-    toc
+    
     set(handles.text9,'String','Done');
     
     h = handles;
@@ -276,35 +271,44 @@ function plotBottomWindows(handles)
     set(handles.text22,'String',(['Slice Stop: ',  slicestopT]));
 
     % calculate individual hanning windows if requested
-    
     % cannot do hanning for all points, because we cut off higher frequencies below. So find the end of the visible window    
-    [~, endInd1] =  min(abs(Xaxis1 - handles.fr));
-    [~, endInd2] = min(abs(Xaxis2 - handles.fr));
-
-    hwc1 = ones(endInd1+1, 1);
-    hwc2 = ones(endInd2+1, 1); % create placeholders incase hanning not requested
+    [~, endInd1] =  min(abs(2*Xaxis1 - handles.fr));
+    [~, endInd2] = min(abs(2*Xaxis2 - handles.fr));
+    endInd12 = floor(endInd1/2);
+    endInd22 = floor(endInd2/2); % stoire these indexes for use in taking part of fft result
+    
+    hwc1 = ones(endInd12 + 1, 1);
+    hwc2 = ones(endInd22 + 1, 1); % create placeholders incase hanning not requested
     
     if get(handles.radiobutton9, 'value') % if hanning window requested
-        hwc1 = hanning(endInd1+1); %get Hanning window coefficients
-        hwc2 = hanning(endInd2+1);
+        hwc1 = hanning(endInd12 + 1); %get Hanning window coefficients
+        hwc2 = hanning(endInd22 + 1);
     end
     
     % current index in dwell data
     ind = currslice*handles.pointsPerSlice;
     
-    ff=fft(handles.dwell(ind:(ind+endInd2))); % call to Matlab's Fast Fourier program for the larger amount of data
+    % call to Matlab's Fast Fourier program for the larger amount of data
+    % so that we only have to do it once
+    ff=fft(handles.dwell(ind:(ind+endInd2)));
+   
+    % just take the first half to avoid excessive noise. Also take abs to
+    % make all entries positive, because we only care sboutr the spike, not
+    % the actual value
+    f = 2*abs( ff(1:(endInd12 + 1) ) )/(1+endInd12); 
     %Bottom Left Plot
     if get(handles.radiobutton5, 'value') % demod
-        A = hwc1.* detrend(2*abs(ff(1:endInd1+1))/(1+endInd1));
+        % multiply hanning coefficients. If they are ones, then hanning was not
+        % requested and the values will remain raw. Otherwise central
+        % frequencies will be more noticeable
+        A = hwc1.* detrend(f);
     else    
-        A = hwc1.* (2*abs(ff(1:endInd1+1))/(1+endInd1));
+        A = hwc1.* f;
     end
-        
-    plot(handles.axes4, handles.fr(1:endInd1+1), A); 
+    
+    plot(handles.axes4, handles.fr(1:endInd12+1), A); 
+    
 
-     % multiply hanning coefficients. If they are ones, then hanning was not
-    % requested and the values will remain raw. Otherwise centralrange
-    % frequencies will be more noticeable
     Yaxis = max(A);
     hold(handles.axes4, 'on')
     if get(handles.radiobutton7, 'value') 
@@ -319,16 +323,20 @@ function plotBottomWindows(handles)
     hold(handles.axes4, 'off')
 
     %Bottom Right Plot;
+   
+    % reassign with the new indices for the bottom right plot
+    f = 2*abs( ff(1:(endInd22 + 1) ) )/(1+endInd22); 
+
+    
     if get(handles.radiobutton5, 'value') % detrend
-        A = hwc2.* detrend(2*abs(ff)/(1+endInd2));
+        A = hwc2.* detrend(f); % detrend f, removing alot of noise by taking out a straight line fit of the original, non-windowed data
     else    
-        A = hwc2.* (2*abs(ff)/(1+endInd2));
+        A = hwc2.* f;
     end    
     
     Yaxis = max(A);
-
-    plot(handles.axes5, handles.fr(1:(endInd2+1)),A);
     
+    plot(handles.axes5, handles.fr(1:(endInd22+1)),A);
     
     hold(handles.axes5, 'on')
     if get(handles.radiobutton7, 'value') == 1
@@ -343,11 +351,12 @@ function plotBottomWindows(handles)
     hold(handles.axes5, 'off')
 
     set(handles.text16, 'String',sprintf('Current Slice: %g of %d', currslice, finish)); % Sets Current slice time in small text box
-
-
+   
     guidata(handles.pushbutton1, handles);    
     
-% Browse button: gets the file and imports to "handles.dwell"
+    
+    
+ % Browse button: gets the file and imports to "handles.dwell"
 function h = pushbutton2_Callback(hObject, eventdata, handles) %Browse button
 % hObject    handle to pushbutton2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -357,7 +366,8 @@ function h = pushbutton2_Callback(hObject, eventdata, handles) %Browse button
 	[name, fpath] = uigetfile(fullfile(handles.prevPath,'*.txt')); %Modify for csv, txt, etc
     if ~fpath 
         set(handles.text6, 'string', str)
-        returnislice
+        h = handles;
+        return
     else
         set(handles.text6,'String',name); %Displays filename in top right
         set(handles.text2,'String','File Chosen:');
@@ -382,7 +392,7 @@ function edit2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Hints: get(hObject,'String') returns contents of edit2 as text
     guidata( hObject, handles );
-1
+
 % --- Executes during object creation, after setting all properties.
 function edit2_CreateFcn(hObject, eventdata, handles) 
 % hObject    handle to edit2 (see GCBO)
@@ -580,31 +590,22 @@ function pushbutton14_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% necessary to show data without clicking plot button
-    handles.dates = handles.data(:, 1); % Array of Dates
-    time_millsec = handles.data(:, 2); % Array of ms
-    time_micsec = handles.data(:, 3); % Array of u_sec
-    handles.seq_count = handles.data(:,4);
-    sec = ((time_millsec ./ 1000) + (time_micsec ./ 1000000)); % creates single array of seconde 
+% This function creates a new figure window, and plots the mena ands stdev
+% for each column position in the dwell data. For ATMS this corresponds to
+% the scan position of the cross-track scanner. It also gives numberic
+% values for mean and stdev
         
-    handles.dwell = handles.data(:, 6:end);
-    [handles.rows,handles.cols] = size(handles.dwell);
-    nSecs1 = sec(1);
-    nSecs2 = sec(handles.rows);
-    handles.startT = datestr(nSecs1/86400, 'HH:MM:SS.FFF');
-    handles.stopT = datestr(nSecs2/86400, 'HH:MM:SS.FFF');
-    handles.startdatestr = datestr(handles.dates(1) + handles.epoch, 'dd-mmm-yyyy');
-    handles.stopdatestr = datestr(handles.dates(handles.rows) + handles.epoch, 'dd-mmm-yyyy');
-    set(handles.text7,'String',(['Start Date: ', handles.startdatestr])); %Setting Times and Dates
-    set(handles.text4,'String',(['Start Time: ', handles.startT]));
-    set(handles.text8,'String',(['Stop Date: ', handles.stopdatestr]));
-    set(handles.text5,'String',(['Stop Time: ', handles.stopT]));
-
-    if get(handles.radiobutton4, 'value')
-        handles.dwell  = (handles.dwell.*0.021777 - 0.3888);
-    else 
-        handles.dwell = handles.data(:, 6:end);
+    if ~isfield(handles, 'dwell') % make sure user has loade data first
+        handles = pushbutton2_Callback(hObject, eventdata, handles);
     end
+    
+    showDates(handles); % show dates in text7, text8
+
+    % first we must reshape the dwell vector into a matrix temporarily. We
+    % should not make a copy of this data, since it is ~44M elements long,
+    % and takes multiple gigabytes of RAM. vec2mat wil place x in the
+    % original row-major format
+    handles.dwell = vec2mat(handles.dwell, handles.cols);
         
     devstring = cell(handles.cols, 1);
     dev = zeros(handles.cols,1);
@@ -612,7 +613,7 @@ function pushbutton14_Callback(hObject, eventdata, handles)
     for i = 1:handles.cols
         dev(i) = std(handles.dwell(:, i));
         means(i) = mean(handles.dwell(:, i));
-        devstring{i} = ['Position ', num2str(i), ':  Mean: ', num2str(means(i)), '   Standard Deviation: ', num2str(dev(i))];
+        devstring{i} = ['Position ', num2str(i), ':  Mean: ', num2str(means(i)), '   StDev: ', num2str(dev(i))];
     end
 
     stDev = figure();
@@ -629,12 +630,18 @@ function pushbutton14_Callback(hObject, eventdata, handles)
     xlabel('Position')
     title('Mean Motor Current Profile')
     SDevbox = uicontrol('style', 'listbox', 'position', [75 0 500 800]);
-    text1 = uicontrol('style', 'text', 'position', [75 800 600 20]);
+    text1 = uicontrol('style', 'text', 'position', [75 850 600 50]);
 
 
-    set(text1, 'String', ['Mean and Standard Deviation for all positions: ', handles.startdatestr, ' ', handles.startT, ' - ', handles.stopdatestr, ' ', handles.stopT] , 'HorizontalAlignment', 'left', 'FontSize', 10, 'FontWeight', 'bold');
+    set(text1, 'String', ['Mean and Standard Deviation for all positions: ', ...
+        get(handles.text7, 'string'),' - ', get(handles.text8, 'string')]...
+        , 'HorizontalAlignment', 'left', 'FontSize', 10, 'FontWeight', 'bold');
 
     set(SDevbox, 'String', devstring, 'FontSize', 10, 'FontWeight', 'bold');
+    
+    handles.dwell = handles.dwell'; % make it column major
+    handles.dwell = handles.dwell(:); % flatten it into a column vector
+    
     guidata(hObject, handles);
 
 
@@ -731,11 +738,54 @@ function pushbutton15_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton15 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-    h = inputdlg('Enter expected frequencies (in Hz) separated by commas');
-   % handles.
+    main_xc = char(strjoin(strcat(string(handles.main_x), ','))); % convert numeric cell array to char vec separated by commas
+    comp_xc = char(strjoin(strcat(string(handles.comp_x), ',')));
+    
+    answer = inputdlg({'Enter expected main frequencies (in Hz) separated by commas: ';...
+        'Enter expected comp frequencies (in Hz) separated by commas: '}, ...
+        'Expected Frequencies', 1, {main_xc(1:end-1), comp_xc(1:end-1)}); % inputdlg(PROMPT,NAME,NUMLINES,DEFAULTANSWER)
+
+    if isempty(answer), return; end % user cancelled
+    
+    main_x = str2num(char(strsplit(answer{1}, ','))); % convert back to double array. ignore the str2num warning, because str2double will fail here
+    comp_x = str2num(char(strsplit(answer{2}, ',')));
+
+    if isempty(main_x) || isempty(comp_x) % isempty is true if user inputted words or left a box empty
+        h=errordlg('Invalid input. Frequencies are being reverted to previous values');
+        uiwait(h)
+        return
+    end
+    handles.main_x = main_x;
+    handles.comp_x = comp_x;
+    guidata(hObject, handles);
+
+
+% --- Executes on button press in radiobutton4.
+function radiobutton4_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of radiobutton4
+    if get(handles.radiobutton4, 'value') 
+    % this is hard-coded but we could easily use the database method that dashboard and science_emi use to calibrate
+        handles.dwell  = handles.dwell * 0.021777 - 0.3888;
+    end
+    if ~get(handles.togglebutton2, 'value'), pushbutton1_Callback(hObject, eventdata, handles); end
+    guidata(hObject, handles);
 
 
 
+% --- Executes on button press in radiobutton3.
+function radiobutton3_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
 
-
-
+% Hint: get(hObject,'Value') returns toggle state of radiobutton3
+    if get(handles.radiobutton3, 'value')
+        % undo the calibration if the box has been unchecked
+        handles.dwell = (handles.dwell + 0.3888) / 0.021777;
+    end
+    if ~get(handles.togglebutton2, 'value'), pushbutton1_Callback(hObject, eventdata, handles); end  
+    guidata(hObject, handles);

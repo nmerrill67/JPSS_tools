@@ -1,4 +1,5 @@
 *.asv
+*.m~ 
 *.csv
 *.h5
 *.pkt
@@ -15,7 +16,7 @@ Decom_tools/.database_CSVs/*
 
 
 
-############# from Decom_tools/CXXdecom .gitignore #############################
+############# from Decom_tools/CXXdecomQt .gitignore #############################
 
 # Prerequisites
 *.d
@@ -76,7 +77,6 @@ Decom.vcxproj.user
 *.ipdb
 *.pch.codeanalysisast
 TAGS
-Decom_tools/CXXDecom/build/*
+Decom_tools/CXXDecomQt/build/*
 *.manifest
-Decom_tools/CXXDecom/build/makefile
-Decom_tools/CXXDecom/documentation/*
+Decom_tools/CXXDecomQt/documentation/*
