@@ -22,7 +22,7 @@ function varargout = dashboard(varargin)
 
     % Edit the above text to modify the response to help dashboard
 
-    % Last Modified by GUIDE v2.5 20-Jul-2017 11:46:51
+    % Last Modified by GUIDE v2.5 20-Jul-2017 12:26:18
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -63,8 +63,7 @@ function dashboard_OpeningFcn(hObject, eventdata, handles, varargin)
     handles.epoch = datenum('01-jan-1958','dd-mmm-yyyy'); % this is used multiple times so we might as well store it for speed
     
     handles.prevPath1 = fullfile(pwd, 'data'); % changes later to point user in the last used directory for data
-    handles.prevPath2 = handles.prevPath1;
-    handles.prevPath3 = handles.prevPath2;
+    handles.prevPath2 = handles.prevPath1; % there are only two paths, because we wnat aux2, and aux3 to be from the same time frame
         
     handles.DBname = ''; % name of curr database stripped of extension
     
@@ -149,19 +148,23 @@ function popup2_Callback(hObject, eventdata, handles) % ATMS PopUp Select menue
     % hObject    handle to popup2 (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    contents = cellstr(get(handles.popup2,'String'));
+    contents = get(handles.popup2,'String');
     popCheck = contents(get(handles.popup2,'Value'));
-
-    if(strcmp(popCheck,'ATMS_3D'))
-        science3d_emi;
-    elseif (strcmp(popCheck,'ATMS_HK'))
-        housekeeping;
-    elseif (strcmp(popCheck,'ATMS_218'))
-        fourierTransform;
-    elseif (strcmp(popCheck,'ATMS_Dwell'))
-        dwell_fft_tool
+    
+    % swtich to change to other GUI window
+    switch strip(popCheck{1})
+        case 'Data Evaluation'
+            return % We are already here, so return
+        case 'Science 3D EMI'
+            science3d_emi
+            close(handles.figure1)
+        case 'Dwell FFT'
+            dwell_fft_tool
+            close(handles.figure1)
+        case 'Frequency Calculator'
+            frequency_gui
+            close(handles.figure1)            
     end
-    guidata(hObject,handles);
 end
 
 
@@ -589,14 +592,7 @@ function pushbutton9_Callback(hObject, eventdata, handles)
 
     set(handles.listbox4,'String',['Time', handles.labels1]);
 
-
-
-    col_labels1 = cell(1,handles.cols1);
-
-    for index = 1:handles.cols1  % prepend col number to column headers - as aid in plotting columns in 3D - for listbox 5 only
-        col_labels1(index) = cellstr(strcat('C',num2str(index),'::',handles.labels1(index)));
-    end
-    set(handles.listbox5,'String',col_labels1);
+    set(handles.listbox5,'String',handles.labels1);
 
 
     set(handles.pushbutton25,'visible','on'); %  EANBLE CLEAR MAIN PLOT BUTTON
@@ -1230,6 +1226,11 @@ function pushbutton14_Callback(hObject, eventdata, handles)
         handles.y3label = y3label;
     end
 
+    if get(handles.radiobutton24, 'value') % if plot AUX derivatives requested
+       data2 = gradient(data2); % Aprox derivative using central distance formula
+       if handles.file3, data3 = gradient(data3); end        
+    end    
+    
     axes(handles.axes1);
     if get(handles.radiobutton5, 'value') % if line plot
 
@@ -1306,7 +1307,7 @@ function pushbutton14_Callback(hObject, eventdata, handles)
             h = legend(axs', char(char(y2label), char(y3label)), "location", "best");
     
         else
-            if handles.file3 && size(handles.axes1, 2)==1
+            if handles.file3 && size(handles.axes1, 2)
                 cla(handles.axes1(2));
             end % clear the plot
 
@@ -1697,13 +1698,13 @@ function pushbutton17_Callback(hObject, eventdata, handles)
     tmpStr = get(handles.text22, 'string');
     set(handles.text22, 'String', 'loading ...')
     
-    [handles.name3, path3] = uigetfile(fullfile(handles.prevPath3,'*.txt')); %Modify for csv, txt, etc
+    [handles.name3, path3] = uigetfile(fullfile(handles.prevPath2,'*.txt')); %Modify for csv, txt, etc
     
     if ~path3
         set(handles.text22, 'string', tmpStr)
         return
     else
-        handles.prevPath3 = [path3 '/..'];
+        handles.prevPath2 = [path3 '/..'];
         %set(handles.text23,'String', ['AUX2 path: ', path3]);
     end
     set(handles.figure1, 'pointer', 'watch') % hourglass pointer (nice aesthetic)
@@ -2205,7 +2206,7 @@ function pushbutton26_Callback(hObject, eventdata, handles)
 
     answer = inputdlg(prompt, name, numlines, handles.defaultAnswer, options);
     
-    if isempty(answer) && ~isfield(handles, 'slices')% user pressed cancel or x, and there is no 3D plot data already
+    if isempty(answer)% user pressed cancel or x, and there is no 3D plot data already
         h = errordlg('Need configuration for 3D plot! Reverting to 2D');
         uiwait(h)
         set(handles.radiobutton3, 'value', 1)
@@ -2213,7 +2214,6 @@ function pushbutton26_Callback(hObject, eventdata, handles)
         radiobutton3_Callback(hObject, eventdata, handles)
         return
     end
-    
     
     if isempty(answer) && isfield(handles, 'slices'), return; end % do nothing. Plot is already there, looking pretty
     
@@ -2228,7 +2228,6 @@ function pushbutton26_Callback(hObject, eventdata, handles)
         radiobutton3_Callback(hObject, eventdata, handles)
         
     else
-        handles.rows1
         handles.defaultAnswer = answer; % save the response for next time
         handles.slices = ceil(handles.rows1/400);  % want 400 scans per view every time
         set(handles.edit3, 'string', ['# Slices: ' num2str(handles.slices)]); % these three edits have 
@@ -2265,4 +2264,9 @@ function radiobutton24_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of radiobutton24
+    if get(handles.radiobutton_24, 'value')
+        if handles.file2 % if AUX data loaded, plot it
+            pushbutton14_Callback(hObject, eventdata, handles); 
+        end
+    end
 end

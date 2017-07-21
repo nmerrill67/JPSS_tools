@@ -34,7 +34,7 @@ function varargout = dwell_fft_tool(varargin)
 
 % Edit the above text to modify the response to help dwell_fft_tool
 
-% Last Modified by GUIDE v2.5 19-Jul-2017 12:19:06
+% Last Modified by GUIDE v2.5 20-Jul-2017 15:41:07
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -190,7 +190,7 @@ function h = pushbutton1_Callback(hObject, eventdata, handles)
    	
     delf = (1/Num_points)*(1/handles.delta_t); %frequency increment for fft
 
-    nf=(Num_points/2)+1;  % Number of points in frequency plots 
+    nf=round(Num_points/2)+1;  % Number of points in frequency plots 
     
     fr = zeros(nf, 1);
     fr(:) = (0:(nf-1))*delf; % freq vector
@@ -789,3 +789,45 @@ function radiobutton3_Callback(hObject, eventdata, handles)
     end
     if ~get(handles.togglebutton2, 'value'), pushbutton1_Callback(hObject, eventdata, handles); end  
     guidata(hObject, handles);
+
+
+% --- Executes on selection change in popupmenu1.
+function popupmenu1_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu1 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu1
+
+    contents = get(handles.popupmenu1,'String');
+    popCheck = contents(get(handles.popupmenu1,'Value')); % value is the index
+    
+    % switch to change to other GUI window
+    switch strip(popCheck{1})
+        case 'Data Evaluation'
+            dashboard
+            close(handles.figure1)
+        case 'Science 3D EMI'
+            science3d_emi
+            close(handles.figure1)
+        case 'Dwell FFT'
+            return
+        case 'Frequency Calculator'
+            frequency_gui
+            close(handles.figure1)
+    end
+
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end

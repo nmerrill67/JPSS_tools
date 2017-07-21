@@ -41,7 +41,7 @@ function varargout = science3d_emi(varargin)
 
 % Edit the above text to modify the response to help science3d_emi
 
-% Last Modified by GUIDE v2.5 05-Jul-2017 12:19:29
+% Last Modified by GUIDE v2.5 20-Jul-2017 15:25:48
 
 % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -1152,4 +1152,45 @@ function pushbutton15_Callback(hObject, eventdata, handles)
     
     guidata(hObject, handles);
 
+end
+
+
+% --- Executes on selection change in popupmenu8.
+function popupmenu8_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu8 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu8
+    contents = get(handles.popupmenu8,'String');
+    popCheck = contents(get(handles.popupmenu8,'Value')); % value is the index
+    
+    % switch to change to other GUI window
+    switch strip(popCheck{1})
+        case 'Data Evaluation'
+            dashboard
+            close(handles.figure1)
+        case 'Science 3D EMI'
+            return
+        case 'Dwell FFT'
+            dwell_fft_tool
+            close(handles.figure1)
+        case 'Frequency Calculator'
+            frequency_gui
+            close(handles.figure1)
+    end
+end
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu8_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 end

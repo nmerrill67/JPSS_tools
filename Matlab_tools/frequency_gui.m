@@ -22,26 +22,26 @@ function varargout = frequency_gui(varargin)
 
 % Edit the above text to modify the response to help frequency_gui
 
-% Last Modified by GUIDE v2.5 24-Jun-2015 14:31:19
+% Last Modified by GUIDE v2.5 20-Jul-2017 16:17:53
 
 % Begin initialization code - DO NOT EDIT
-gui_Singleton = 1;
-gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @frequency_gui_OpeningFcn, ...
-                   'gui_OutputFcn',  @frequency_gui_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
-if nargin && ischar(varargin{1})
-    gui_State.gui_Callback = str2func(varargin{1});
-end
+    gui_Singleton = 1;
+    gui_State = struct('gui_Name',       mfilename, ...
+                       'gui_Singleton',  gui_Singleton, ...
+                       'gui_OpeningFcn', @frequency_gui_OpeningFcn, ...
+                       'gui_OutputFcn',  @frequency_gui_OutputFcn, ...
+                       'gui_LayoutFcn',  [] , ...
+                       'gui_Callback',   []);
+    if nargin && ischar(varargin{1})
+        gui_State.gui_Callback = str2func(varargin{1});
+    end
 
-if nargout
-    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
-else
-    gui_mainfcn(gui_State, varargin{:});
-end
-% End initialization code - DO NOT EDIT
+    if nargout
+        [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+    else
+        gui_mainfcn(gui_State, varargin{:});
+    end
+    % End initialization code - DO NOT EDIT
 
 
 % --- Executes just before frequency_gui is made visible.
@@ -52,14 +52,14 @@ function frequency_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to frequency_gui (see VARARGIN)
 
-% Choose default command line output for frequency_gui
-handles.output = hObject;
+    % Choose default command line output for frequency_gui
+    handles.output = hObject;
 
-% Update handles structure
-guidata(hObject, handles);
+    % Update handles structure
+    guidata(hObject, handles);
 
-% UIWAIT makes frequency_gui wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
+    % UIWAIT makes frequency_gui wait for user response (see UIRESUME)
+    % uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -70,7 +70,7 @@ function varargout = frequency_gui_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = handles.output;
+    varargout{1} = handles.output;
 
 
 % --- Executes on button press in checkbox1.
@@ -136,9 +136,9 @@ function edit1_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 
 
 
@@ -159,9 +159,9 @@ function edit2_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 
 
 
@@ -182,9 +182,9 @@ function edit3_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 
 
 
@@ -205,9 +205,9 @@ function edit4_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 
 
 
@@ -228,9 +228,9 @@ function edit5_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 
 
 
@@ -251,9 +251,9 @@ function edit6_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 
 
 % --- Executes on button press in radiobutton1.
@@ -281,92 +281,133 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 %Input variables
-phi =  str2double(get(handles.edit1, 'String'));
-N = str2double(get(handles.edit2, 'String'));
-Bd = str2double(get(handles.edit3, 'String'));
-Pd = str2double(get(handles.edit4, 'String'));
+    phi =  str2double(get(handles.edit1, 'String'));
+    N = str2double(get(handles.edit2, 'String'));
+    Bd = str2double(get(handles.edit3, 'String'));
+    Pd = str2double(get(handles.edit4, 'String'));
 
-%If any boxes are empty, they are set to zero:
-if isempty(get(handles.edit1, 'String'))
-    set(handles.edit1, 'String', '0');
-end
-if isempty(get(handles.edit2, 'String'))
-    set(handles.edit2, 'String', '0');
-end
-if isempty(get(handles.edit3, 'String'))
-    set(handles.edit3, 'String', '0');
-end
-if isempty(get(handles.edit4, 'String'))
-    set(handles.edit4, 'String', '0');
-end
-if isempty(get(handles.edit5, 'String'))
-    set(handles.edit5, 'String', '0');
-end
-if isempty(get(handles.edit6, 'String'))
-    set(handles.edit6, 'String', '0');
-end
-
-%Resolves o/S and RPM unit differences
-switch get(get(handles.uibuttongroup6,'SelectedObject'),'Tag')
-    case 'radiobutton11'
-    InSpeed = str2double(get(handles.edit5, 'String'));
-    case 'radiobutton12'
-    InSpeed = (1/6)*str2double(get(handles.edit5, 'String'));
-end
-switch get(get(handles.uibuttongroup7,'SelectedObject'),'Tag')
-    case 'radiobutton13'
-    OutSpeed = str2double(get(handles.edit6, 'String'));
-    case 'radiobutton15'
-    OutSpeed = (1/6)*str2double(get(handles.edit6, 'String'));
-end
-
-% Pitch/Ball Diameter are dimensionless in calculations, folowing code
-% resolves differences between mm/In if they are different
-if get(handles.radiobutton7,'Value') == 1
-    if get(handles.radiobutton10, 'Value') == 1
-        Pd = Pd/25.4;
+    %If any boxes are empty, they are set to zero:
+    if isempty(get(handles.edit1, 'String'))
+        set(handles.edit1, 'String', '0');
     end
-end
-if get(handles.radiobutton8,'Value') == 1
-    if get(handles.radiobutton9, 'Value') == 1
-        Bd = Bd/25.4;
+    if isempty(get(handles.edit2, 'String'))
+        set(handles.edit2, 'String', '0');
     end
-end
+    if isempty(get(handles.edit3, 'String'))
+        set(handles.edit3, 'String', '0');
+    end
+    if isempty(get(handles.edit4, 'String'))
+        set(handles.edit4, 'String', '0');
+    end
+    if isempty(get(handles.edit5, 'String'))
+        set(handles.edit5, 'String', '0');
+    end
+    if isempty(get(handles.edit6, 'String'))
+        set(handles.edit6, 'String', '0');
+    end
 
-% Degrees/Radians
-switch get(get(handles.uibuttongroup1,'SelectedObject'),'Tag')
-    case 'radiobutton1'
-        phi = (pi/180)*str2double(get(handles.edit1, 'String'));
-    case 'radiobutton2'
-        phi = str2double(get(handles.edit1, 'String'));
-end
+    %Resolves o/S and RPM unit differences
+    switch get(get(handles.uibuttongroup6,'SelectedObject'),'Tag')
+        case 'radiobutton11'
+        InSpeed = str2double(get(handles.edit5, 'String'));
+        case 'radiobutton12'
+        InSpeed = (1/6)*str2double(get(handles.edit5, 'String'));
+    end
+    switch get(get(handles.uibuttongroup7,'SelectedObject'),'Tag')
+        case 'radiobutton13'
+        OutSpeed = str2double(get(handles.edit6, 'String'));
+        case 'radiobutton15'
+        OutSpeed = (1/6)*str2double(get(handles.edit6, 'String'));
+    end
 
-% Frequency Calculations
-if get(handles.checkbox1,'Value') == 1
-    FTF = (1/60)*0.5*(InSpeed*(1 - (Bd*cos(phi))/Pd) + OutSpeed*(1+(Bd*cos(phi))/Pd));
-    set(handles.text13, 'String', 'FTF (Hz):')
-    set(handles.text8, 'String', num2str(FTF)); 
-end
+    % Pitch/Ball Diameter are dimensionless in calculations, folowing code
+    % resolves differences between mm/In if they are different
+    if get(handles.radiobutton7,'Value') == 1
+        if get(handles.radiobutton10, 'Value') == 1
+            Pd = Pd/25.4;
+        end
+    end
+    if get(handles.radiobutton8,'Value') == 1
+        if get(handles.radiobutton9, 'Value') == 1
+            Bd = Bd/25.4;
+        end
+    end
 
-if get(handles.checkbox3,'Value') == 1
-    BPFI = abs((1/60)*(N/2)*(InSpeed - OutSpeed)*(1+(Bd*cos(phi)/Pd)));
-    set(handles.text14, 'String', 'BPFI (Hz):'); 
-    set(handles.text10, 'String', num2str(BPFI)); 
-end
+    % Degrees/Radians
+    switch get(get(handles.uibuttongroup1,'SelectedObject'),'Tag')
+        case 'radiobutton1'
+            phi = (pi/180)*str2double(get(handles.edit1, 'String'));
+        case 'radiobutton2'
+            phi = str2double(get(handles.edit1, 'String'));
+    end
 
-if get(handles.checkbox4,'Value') == 1
-    BPFO = abs((1/60)*(N/2)*(InSpeed - OutSpeed)*(1-(Bd*cos(phi)/Pd)));
-    set(handles.text15, 'String', 'BPFO (Hz):'); 
-    set(handles.text9, 'String', num2str(BPFO)); 
-end
+    % Frequency Calculations
+    if get(handles.checkbox1,'Value') == 1
+        FTF = (1/60)*0.5*(InSpeed*(1 - (Bd*cos(phi))/Pd) + OutSpeed*(1+(Bd*cos(phi))/Pd));
+        set(handles.text13, 'String', 'FTF (Hz):')
+        set(handles.text8, 'String', num2str(FTF)); 
+    end
 
-if get(handles.checkbox5,'Value') == 1
-    BSFx2 = abs((1/60)*(Pd/Bd)*(InSpeed - OutSpeed)*(1 - (Bd^2)*(cos(phi)^2)/(Pd^2)));
-    set(handles.text16, 'String', '2x BSF (Hz):');
-    set(handles.text11, 'String', num2str(BSFx2)); 
-end
-if get(handles.checkbox2, 'Value') == 1
-        BSF = 0.5*abs((1/60)*(Pd/Bd)*(InSpeed - OutSpeed)*(1 - (Bd^2)*(cos(phi)^2)/(Pd^2)));
-        set(handles.text17, 'String', 'BSF (Hz):');
-        set(handles.text12, 'String', num2str(BSF)); 
-end
+    if get(handles.checkbox3,'Value') == 1
+        BPFI = abs((1/60)*(N/2)*(InSpeed - OutSpeed)*(1+(Bd*cos(phi)/Pd)));
+        set(handles.text14, 'String', 'BPFI (Hz):'); 
+        set(handles.text10, 'String', num2str(BPFI)); 
+    end
+
+    if get(handles.checkbox4,'Value') == 1
+        BPFO = abs((1/60)*(N/2)*(InSpeed - OutSpeed)*(1-(Bd*cos(phi)/Pd)));
+        set(handles.text15, 'String', 'BPFO (Hz):'); 
+        set(handles.text9, 'String', num2str(BPFO)); 
+    end
+
+    if get(handles.checkbox5,'Value') == 1
+        BSFx2 = abs((1/60)*(Pd/Bd)*(InSpeed - OutSpeed)*(1 - (Bd^2)*(cos(phi)^2)/(Pd^2)));
+        set(handles.text16, 'String', '2x BSF (Hz):');
+        set(handles.text11, 'String', num2str(BSFx2)); 
+    end
+    if get(handles.checkbox2, 'Value') == 1
+            BSF = 0.5*abs((1/60)*(Pd/Bd)*(InSpeed - OutSpeed)*(1 - (Bd^2)*(cos(phi)^2)/(Pd^2)));
+            set(handles.text17, 'String', 'BSF (Hz):');
+            set(handles.text12, 'String', num2str(BSF)); 
+    end
+
+
+% --- Executes on selection change in popupmenu1.
+function popupmenu1_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu1 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu1
+    contents = get(handles.popupmenu1,'String');
+    popCheck = contents(get(handles.popupmenu1,'Value')); % value is the index
+    
+    % switch to change to other GUI window
+    switch strip(popCheck{1})
+        case 'Data Evaluation'
+            dashboard
+            close(handles.figure1)
+        case 'Science 3D EMI'
+            science3d_emi
+            close(handles.figure1)
+        case 'Dwell FFT'
+            return
+        case 'Frequency Calculator'
+            frequency_gui
+            close(handles.figure1)
+    end
+
+    
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
