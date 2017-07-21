@@ -1227,8 +1227,19 @@ function pushbutton14_Callback(hObject, eventdata, handles)
     end
 
     if get(handles.radiobutton24, 'value') % if plot AUX derivatives requested
-       data2 = gradient(data2); % Aprox derivative using central distance formula
-       if handles.file3, data3 = gradient(data3); end        
+       for i = 1:size(data2, 2) % iterate over columns for different nemonics. If we take grad(data2) then it sees it as a vector field, not separate vectors
+           % Aprox time derivative using centered finite diffrence formula.
+           % Divide element wise for d/dt(j) data2(j,i)
+            data2(:,i) = gradient( data2(:,i) )./gradient(x2); 
+            y2label{i} = ['d/dt (' y2label{i} ')']; % renmae the label to correspond to derivative
+       end
+       if handles.file3 % do the same for aux 3
+           for i = 1:size(data3, 2)
+              data3(:,i) = gradient( data3(:,i) )./gradient(x3); 
+              y3label{i} = ['d/dt (' y3label{i} ')']; % renmae the label to correspond to derivative
+              
+           end
+       end        
     end    
     
     axes(handles.axes1);
@@ -2264,9 +2275,8 @@ function radiobutton24_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of radiobutton24
-    if get(handles.radiobutton_24, 'value')
-        if handles.file2 % if AUX data loaded, plot it
-            pushbutton14_Callback(hObject, eventdata, handles); 
-        end
+    if handles.file2 % if AUX data loaded, plot it
+        pushbutton14_Callback(hObject, eventdata, handles); 
+        
     end
 end

@@ -13,11 +13,12 @@ function [calibData, y_label] = calibrateData(data, DBDptr, instruments)
         calibData = data;
         y_label = instruments;
         d = errordlg('Unexpected calibration error. Data will remain uncalibrated.');
-        uiait(d)
+        uiwait(d)
         return
     end
     
     [coeffMat, y_label] = calcCoeffs(DBDptr, instruments); % # instruments long cell array containing coefficient column vecs 
+    y_label = cellstr(y_label); % convert to cell array
     calibData_tmp = zeros(size(data));
     for k = 1:length(instruments)
         coeffI = coeffMat{k};
