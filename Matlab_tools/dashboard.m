@@ -1081,6 +1081,7 @@ function proc_bin_button_Callback(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)\
     
     handles = runDecom(hObject, eventdata, handles, @pushbutton22_Callback);
+    
     guidata(hObject, handles)
 end
 
