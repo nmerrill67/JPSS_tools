@@ -3,9 +3,13 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     % hObject, eventdata, handles - all things from normal GUI callbacks
     % newDBfun - function handle to a functions that updates the DBDptr and
     % DBname
-    if ~exist('../Decom_tools/databases/scdatabase.csv', 'file') || isempty(handles.DBname)% if there is no DB for the decom, prompt for one by default
+    
+    % SC database
+    if ~exist('../Decom_tools/databases/*database.csv', 'file') || isempty(handles.DBname)% if there is no DB for the decom, prompt for one by default
         handles = newDBfun(hObject, eventdata, handles); % update the handles pointer
-      
+        
+    
+        
     else % give the option to use the existing one
         f = figure('name', 'Database Options');
         set(f, 'MenuBar', 'none')
@@ -44,16 +48,17 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     % correct paths to the front of the LD_LIBRARY_PATH environment
     % variable
     if isunix
-        disp here
         QTDIR = getenv('QTDIR'); % get the base path for Qt install. This should work for any unix system
         LD_LIBRARY_PATH = getenv('LD_LIBRARY_PATH');% get the original path
         % temporarily reset the LD_LIBRARY_PATH. If the Qt directory is
         % appended to the front of the path, the program still crashes
         setenv('LD_LIBRARY_PATH', [QTDIR '/plugins/platforms']); 
-    end
+        system('cd ../Decom_tools && ./CXXDecomQt/build/bin/CXXDecomQt && cd ../Matlab_tools');
+
+    else
     
-    system('cd ../Decom_tools && ./CXXDecomQt/build/bin/CXXDecomQt && cd ../Matlab_tools');
-  
+        system('cd ../Decom_tools && ./CXXDecomQt/CXXDecomQt && cd ../Matlab_tools');
+    end
     if isunix
         setenv('LD_LIBRARY_PATH', LD_LIBRARY_PATH); % set the path back to the original
     end

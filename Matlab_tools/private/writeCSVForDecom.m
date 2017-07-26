@@ -1,11 +1,15 @@
-function fname = writeCSVForDecom()    
+function fname = writeCSVForDecom(varargin)    
 % transform excel file into csv for quick reading. time to read in excel =
 % 30 sec, time to read csv < 1 sec.
 % this function creeates the csvs for the matlab tools and the cpp decom
 % the reading of the excel only needs to happen once ever
 
+%     if nargin==0 % normal usage 
     [filename, fpath] = uigetfile(fullfile(pwd, 'DBD_XLS', '*.xls*'), 'Select Database Definition Excel File');
-
+%     elseif nargin==1 % forced usage -> either npp or j1 (add successors to these sats as needed) databases dont exist
+%         files = uipickfiles('FilterSpec', '../DBD_XML', 'Prompt', 'Choose the directories for the desired science XML databases');
+%         
+        
     if ~filename, fname = ''; return; end
     
     f = strsplit(filename, '.');

@@ -2,46 +2,50 @@ function xml2CSV()
 % select XML folder, process all the XML into lookup tables for decom and
 % later Calibration use.
 
-    dname = uigetdir('DBD_XML','Select XML folder. Please limit to one instrument per folder'); % get xml folder
-    if ~dname, return; end % user cancelled. Prevent errors
-    d = dir([dname '/**/*.xml']); % get dir info for all subdirs too. specify wildcard to avoid '..' and '.'
-    if size(unique(char(d.folder), 'rows'), 1) > 1 % they chose a root directory of a huge file tree.
-        h = errordlg('Please choose directory containing only one instrument or purely spacecraft XML files');
-        uiwait(h)
-        xml2CSV();
-        return
-    end
-    dnames = lower([d.folder]); % str of sub directory name 
+    % use this open-sourced multi=select uigetdir to select multiple XML folders for multiple instruments
+    dnames_tot = uipickfiles('FilterSpec', '../DBD_XML', 'Prompt', 'Choose the directories for the desired science XML databases');
     
-    insNames = {'omps'; 'atms'; 'ceres'; 'cris'; 'viirs'};
-    instr = insNames(ismember(insNames, strsplit(dnames, {'_', '-'}))); % figure out which instrument we are dealing with
-    if isempty(instr) || length(instr)~=1
-        h = errordlg('Please choose a correct directory. It must contain XML files from only one instrument or spacecraft');
-        uiwait(h)
-        xml2CSV();
-        return
-    end
+    if ~iscell(dnames_tot), return; end % user cancelled
     
-    fnames = fullfile({d.folder},{d.name}); % all filenames with full path
- 
-    T = []; % cant preallocate. We dont know the size
-    h = waitbar(0, 'Reading XML files');
-    len = length(fnames);
-    tic
-    for i = 1:len 
-        tmp = xml2Arr(fnames{i});
-        waitbar(i/len, h); % parfor starts with i = len? its weird
-        if isempty(tmp), continue; end % useless file for decom
-        T = [T; tmp];
+    for dname = dnames_tot % iterate through all chosen XML dirs. Dont use parfor, since there is 
+
+        d = dir([dname '/**/*.xml']); % get dir info for all subdirs too. specify wildcard to avoid '..' and '.'
+        if size(unique(char(d.folder), 'rows'), 1) > 1 % they chose a root directory of a huge file tree.
+            h = errordlg('Please choose directory containing only one instrument or purely spacecraft XML files');
+            uiwait(h)
+            continue
+        end
+        dnames = lower([d.folder]); % str of sub directory name 
+
+        insNames = {'omps'; 'atms'; 'ceres'; 'cris'; 'viirs'};
+        instr = insNames(ismember(insNames, strsplit(dnames, {'_', '-'}))); % figure out which instrument we are dealing with
+        if isempty(instr) || length(instr)~=1
+            h = errordlg('Please choose a correct directory. It must contain XML files from only one instrument or spacecraft');
+            uiwait(h)
+            continue
+        end
+
+        fnames = fullfile({d.folder},{d.name}); % all filenames with full path
+
+        T = []; % cant preallocate. We dont know the size
+        h = waitbar(0, 'Reading XML files');
+        len = length(fnames);
+        tic
+        for i = 1:len 
+            tmp = xml2Arr(fnames{i});
+            waitbar(i/len, h); % parfor starts with i = len? its weird
+            if isempty(tmp), continue; end % useless file for decom
+            T = [T; tmp];
+        end
+        toc
+        delete(h)
+        V = {'Mnemonic', 'Type', 'Packet', 'bit_byte', 'Units', 'Conversion', 'Description'};
+        spl = strsplit(dname ,{'/','\'}); % split the dirname from the path for writing purposes
+    %     writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
+    %         'VariableNames', V), ['../Decom_tools/database_CSVs/' spl{end} '.csv']); % fix the column order for decom engine 
+        writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
+            'VariableNames', V), [spl{end} '.csv']); % fix the column order for decom engine   
     end
-    toc
-    delete(h)
-    V = {'Mnemonic', 'Type', 'Packet', 'bit_byte', 'Units', 'Conversion', 'Description'};
-    spl = strsplit(dname ,{'/','\'}); % split the dirname from the path for writing purposes
-    writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
-        'VariableNames', V), ['../Decom_tools/.database_CSVs/', spl{end} '.csv']); % fix the column order for decom engine 
-%     writetable(array2table([T(:,1) T(:,3) T(:,7) T(:,6) T(:,4) T(:,5) T(:,2)],...
-%         'VariableNames', V), [spl{end} '.csv']); % fix the column order for decom engine     
 end
 
 function T = xml2Arr(file)
@@ -64,7 +68,7 @@ function T = xml2Arr(file)
     m = s.applicationPacket.userFieldsSegment.userField;
     T = string(zeros(length(m), 7)); % preallocate array
     
-    parfor i = 1:length(m) % parallel for loop slightly faster for large xml folders
+    for i = 1:length(m) % parallel for loop slightly faster for large xml folders
         mi = fixConvRuleAndValAndByteBitAndUnpackRule(m{i}); % fix up the struct to a useable format
         mi.Packet = ['APID' repelem('0' ,4-length(apid)) apid]; % APID
         tmp = struct2cell(mi);
