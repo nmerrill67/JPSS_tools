@@ -57,7 +57,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
 
     else
     
-        system('cd ../Decom_tools && ./CXXDecomQt/CXXDecomQt && cd ../Matlab_tools');
+        system('cd ../Decom_tools && ./CXXDecomQtWin/CXXDecomQt && cd ../Matlab_tools');
     end
     if isunix
         setenv('LD_LIBRARY_PATH', LD_LIBRARY_PATH); % set the path back to the original
