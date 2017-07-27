@@ -100,6 +100,8 @@ function science3d_emi_OpeningFcn(hObject, eventdata, handles, varargin)
     
     handles.gains = [38.5, 48.8, 38.8, 36.7, 34.2, 35.3, 28.2, 32.6, 32.9, 34.8, 35.1, 39.4, 40.4, 42.3, 41.3, 35.4, 16.52, 14.0, 14.48, 15.9, 15.52, 14.78];
 
+    handles.isOMPS = 0 ; % flag for whether or not this is OMPS science data. Special measures are taken for OMPS
+    
     handles.sc_file = 0; % set flag to indicate that no S/C file has been opened yet
     handles.main_file = 0;
     handles.pow_file = 0;
@@ -151,39 +153,42 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 %reset(handles.axes3);
     str = get(handles.text2, 'string');
     set(handles.text2, 'String', 'loading ...')
-    [name_atms, path_atms] = uigetfile(fullfile(handles.prevPath,'*.txt'));
-    if ~path_atms
+    [name, path] = uigetfile(fullfile(handles.prevPath,'*.txt'));
+    if ~path
         set(handles.text2, 'String', str)
         return;
     else
-        handles.prevPath = path_atms;
-       set(handles.text2,'String', ['File Chosen: ', name_atms]);
+        handles.prevPath = path;
+       set(handles.text2,'String', ['File Chosen: ', name]);
     end
+    
+    handles.isOMPS = ismember('OMPS', strsplit(name, '_')); % is this OMPS data? 
+       
     set(handles.figure1, 'pointer', 'watch') % hourglass pointer (nice aesthetic)
     
 
     handles.main_file = 1;
-    handles.data_atms = table2array(readtable(fullfile(path_atms, name_atms), 'delimiter',',')); % Whole Matrix
+    handles.data = table2array(readtable(fullfile(path, name), 'delimiter',',')); % Whole Matrix
 
-    if any(isnan(handles.data_atms(:,end))) % sometimes readtable adds an extra column
-        handles.data_atms = handles.data_atms(:,1:end-1); % cut off the last column, which contains a ton of NaN
+    if any(isnan(handles.data(:,end))) % sometimes readtable adds an extra column
+        handles.data = handles.data(:,1:end-1); % cut off the last column, which contains a ton of NaN
     end    
     
     if get(handles.radiobutton4,'value') || get(handles.radiobutton5,'value') % if Delete Dups or sort requested
-        handles.data_atms = dataCorrection(handles.data_atms, ...
+        handles.data = dataCorrection(handles.data, ...
             get(handles.radiobutton4,'value'), get(handles.radiobutton5,'value'));
     end
 
-    [handles.rows_atms,handles.cols_atms] = size(handles.data_atms);
+    [handles.rows,handles.cols] = size(handles.data);
     
     % Used to Slice up Data
-    handles.slices = floor(handles.rows_atms/400); % always want about 400 scans per slice
+    handles.slices = floor(handles.rows/400); % always want about 400 scans per slice
 %    set(handles.text4, 'string', ['Number of Slices: ' num2str(handles.slices)])
-    handles.index = floor((handles.rows_atms)/handles.slices);    
+    handles.index = floor((handles.rows)/handles.slices);    
     
-    handles.dates = handles.data_atms(: , 1); % DAY field
-    handles.millsec = handles.data_atms(: , 2); % Millisecond field
-    handles.usec = handles.data_atms(: , 3); % Microsecond field
+    handles.dates = handles.data(: , 1); % DAY field
+    handles.millsec = handles.data(: , 2); % Millisecond field
+    handles.usec = handles.data(: , 3); % Microsecond field
     
     handles.time = handles.dates + handles.epoch + ...
         (handles.millsec/1000+ handles.usec/1000000)/86400;  % setting time vector (in days from 00-00-0000)    
@@ -199,33 +204,43 @@ function pushbutton1_Callback(hObject, eventdata, handles)
         gapTimes = handles.time(gapInds);
         %datestr(gapTimes,'HH:MM:SS')
         num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan ); % vector of number of missed scans (scalar if only one gap in data)
-        filler = mean(mean(handles.data_atms(:, floor(3*size(handles.data_atms,2)/4):end))); % choose a fill data value from scan data
+        filler = mean(mean(handles.data(:, floor(3*size(handles.data,2)/4):end))); % choose a fill data value from scan data
         for i = 1:length(num_missed_scans)    
             fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i));
             handles.time((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i))) = fill_times;% fix the timestamps
             %datestr(fill_times, 'HH:MM:SS')
-            handles.data_atms((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i)), :) = filler*ones(num_missed_scans(i), handles.cols_atms);  % fill with NaN so Matlab skips it in the plot
+            handles.data((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i)), :) = filler*ones(num_missed_scans(i), handles.cols);  % fill with NaN so Matlab skips it in the plot
         end
 
-        handles.rows_atms = size(handles.data_atms, 1); % update size
+        handles.rows = size(handles.data, 1); % update size
     end
 
 
-    if handles.cols_atms == 300
+    if handles.cols == 300
         % Diag data
-        handles.counts = handles.data_atms(:, 153:300); %
-        handles.angle = handles.data_atms(:,5:152);
+        handles.counts = handles.data(:, 153:300); %
+        handles.angle = handles.data(:,5:152);
     else
         % Normal data
-       handles.counts = handles.data_atms(:, 108:211); % 211 to include calibration positions or 204 for earth scan only
-       handles.cal_cold = mean(handles.data_atms(:, 204:207)); % Average of Cold Cal targets (nothing for diag data)
-       handles.cal_hot = mean(handles.data_atms(:, 208:211)); % Average of internal Warm target
-       handles.angle = handles.data_atms(:,4:107);
+       handles.counts = handles.data(:, 108:211); % 211 to include calibration positions or 204 for earth scan only
+       handles.cal_cold = mean(handles.data(:, 204:207)); % Average of Cold Cal targets (nothing for diag data)
+       handles.cal_hot = mean(handles.data(:, 208:211)); % Average of internal Warm target
+       handles.angle = handles.data(:,4:107);
     end
     
     handles.main_dt = mean(handles.time(2:end)-handles.time(1:(end-1)));
     set(handles.figure1, 'pointer', 'arrow') % hourglass pointer (nice aesthetic)
   
+    if handles.isOMPS
+        set(handles.axes5, 'visible', 0)
+        set(handles.axes6, 'visible', 0)
+        set(handles.text36, 'visible', 1)
+        set(handles.text42, 'visible', 1)
+        set(handles.text43, 'visible', 1)
+        set(handles.text44, 'visible', 1)
+
+    end
+    
     guidata(hObject, handles);
 
 end
@@ -582,7 +597,7 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 %     handles.slices = str2double(tmp{2});
 
     edit4strnum = str2double(get(handles.edit4, 'string')); % # Slices
-    if handles.main_file, slices = ceil(handles.rows_atms/400);
+    if handles.main_file, slices = ceil(handles.rows/400);
     elseif handles.sc_file, slices = ceil(handles.rows_sc/400);
     else, return
     end
@@ -609,7 +624,7 @@ function pushbutton4_Callback(hObject, eventdata, handles)
 %     handles.slices = str2double(tmp{2});
     
     edit4strnum = str2double(get(handles.edit4, 'string'));
-    if handles.main_file, slices = floor(handles.rows_atms/400);
+    if handles.main_file, slices = floor(handles.rows/400);
     elseif handles.sc_file, slices = floor(handles.rows_sc/400);
     else, return
     end
