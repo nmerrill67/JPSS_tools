@@ -100,7 +100,7 @@ function science3d_emi_OpeningFcn(hObject, eventdata, handles, varargin)
     
     handles.gains = [38.5, 48.8, 38.8, 36.7, 34.2, 35.3, 28.2, 32.6, 32.9, 34.8, 35.1, 39.4, 40.4, 42.3, 41.3, 35.4, 16.52, 14.0, 14.48, 15.9, 15.52, 14.78];
 
-    handles.isOMPS = 0 ; % flag for whether or not this is OMPS science data. Special measures are taken for OMPS
+    handles.instr = 'ATMS' ; % so we knwo how to pllot the data
     
     handles.sc_file = 0; % set flag to indicate that no S/C file has been opened yet
     handles.main_file = 0;
@@ -162,84 +162,151 @@ function pushbutton1_Callback(hObject, eventdata, handles)
        set(handles.text2,'String', ['File Chosen: ', name]);
     end
     
-    handles.isOMPS = ismember('OMPS', strsplit(name, '_')); % is this OMPS data? 
+    % find out which instrument we have
+    instr = {'ATMS', 'OMPS', 'CERES', 'VIIRS', 'CrIS'};
+    handles.instr = instr{ismember(lower(instr), lower(strsplit(name, '_')))};  
        
     set(handles.figure1, 'pointer', 'watch') % hourglass pointer (nice aesthetic)
     
 
+    
     handles.main_file = 1;
-    handles.data = table2array(readtable(fullfile(path, name), 'delimiter',',')); % Whole Matrix
-
-    if any(isnan(handles.data(:,end))) % sometimes readtable adds an extra column
-        handles.data = handles.data(:,1:end-1); % cut off the last column, which contains a ton of NaN
+    data = readtable(fullfile(path, name), 'delimiter',','); % Whole Matrix
+    
+    varNames= string(data.Properties.VariableNames); % names in first row
+    
+    data = table2array(data); % convert to regular matrix
+    
+    if any(isnan(data(:,end))) % sometimes readtable adds an extra column
+        data = data(:,1:end-1); % cut off the last column, which contains a ton of NaN
     end    
     
     if get(handles.radiobutton4,'value') || get(handles.radiobutton5,'value') % if Delete Dups or sort requested
-        handles.data = dataCorrection(handles.data, ...
+        data = dataCorrection(data, ...
             get(handles.radiobutton4,'value'), get(handles.radiobutton5,'value'));
     end
 
-    [handles.rows,handles.cols] = size(handles.data);
+    [handles.rows,handles.cols] = size(data);
     
-    % Used to Slice up Data
-    handles.slices = floor(handles.rows/400); % always want about 400 scans per slice
-%    set(handles.text4, 'string', ['Number of Slices: ' num2str(handles.slices)])
-    handles.index = floor((handles.rows)/handles.slices);    
     
-    handles.dates = handles.data(: , 1); % DAY field
-    handles.millsec = handles.data(: , 2); % Millisecond field
-    handles.usec = handles.data(: , 3); % Microsecond field
-    
+    handles.dates = data(: , 1); % DAY field
+    handles.millsec = data(: , 2); % Millisecond field
+    handles.usec = data(: , 3); % Microsecond field
+
     handles.time = handles.dates + handles.epoch + ...
         (handles.millsec/1000+ handles.usec/1000000)/86400;  % setting time vector (in days from 00-00-0000)    
 
-    % check for gaps - if there are, generate fill records 
-    two_scans = 2.667 * 2 / 86400; % set up 2 scans as limit of acceptability delta time (in days)
 
-    gap_delta = handles.time(2:end) - handles.time(1:(end-1)); % dt vector throughout. an index indicating a gap in this vector is the start index for the gap in the time vector    
+    switch handles.instr % check which instrument we are looking at. Load data in format for that instrument
+        
+        case 'OMPS'
+            set(handles.axes7, 'visible', 'off')
+            set(handles.axes8, 'visible', 'off')
+            set(handles.axes5, 'visible', 'off')
+            set(handles.axes6, 'visible', 'off')
+            set(handles.text37, 'visible', 'on')
+            set(handles.text38, 'visible', 'on')
+            set(handles.text39, 'visible', 'on')
+            set(handles.text40, 'visible', 'on')
+            set(handles.text41, 'visible', 'on')
+            set(handles.radiobutton3, 'visible', 'off')
+            set(handles.text30, 'visible', 'off')
+            set(handles.text31, 'visible', 'off')
+            set(handles.pushbutton15, 'visible', 'off')
+            set(handles.text33, 'visible', 'off')                   
+            set(handles.togglebutton1, 'visible', 'off')
+            set(handles.edit5, 'visible', 'off')
 
-    if any(gap_delta > two_scans)
-        gapInds = find(gap_delta > two_scans); % find the startInds of the gaps
-        one_scan = 2.667/86400;  % time of one scan in days  
-        gapTimes = handles.time(gapInds);
-        %datestr(gapTimes,'HH:MM:SS')
-        num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan ); % vector of number of missed scans (scalar if only one gap in data)
-        filler = mean(mean(handles.data(:, floor(3*size(handles.data,2)/4):end))); % choose a fill data value from scan data
-        for i = 1:length(num_missed_scans)    
-            fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i));
-            handles.time((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i))) = fill_times;% fix the timestamps
-            %datestr(fill_times, 'HH:MM:SS')
-            handles.data((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i)), :) = filler*ones(num_missed_scans(i), handles.cols);  % fill with NaN so Matlab skips it in the plot
-        end
+            
+            handles.slices = handles.rows; % one OMPS img per row
+            handles.index = 1 ; % number of rows to jump when going to next slice AKA next row
+            pixVars = regexp(varNames, 'Pixel[_]?[0-9]*', 'match'); % find all pixel variables. the _<number> is added on by matlab since the pixel varname repeats
+            pixVars = strip(string([pixVars{:}]')); % coerce to string array
+            
+            startPix = find(varNames == pixVars(1)); % index of pix start
+            endPix = find(varNames == pixVars(end));
+            
+            handles.counts = data(:,startPix:endPix)'; % extract counts. Transpose to make it coumn major for speed
+            handles.ompsTlm = data(:, 1:startPix-1); % get the rest of the tlm data
+            
+            % Find the non-optional parameters
+            handles.TC_T_CCD_ind = find(varNames=='TC_T_CCD');
+            handles.NP_T_CCD_ind = find(varNames=='NP_T_CCD');
+            handles.TC_T_COND_BAR_ind = find(varNames=='TC_T_COND_BAR');
+            handles.NP_T_COND_BAR_ind = find(varNames=='NP_T_COND_BAR');
+            handles.NP_T_HOUSING_ind = find(varNames=='NP_T_HOUSING');
+            handles.TC_T_HOUSING_ind = find(varNames=='TC_T_HOUSING');
+           
+            
+        case 'ATMS'
+            
+            set(handles.axes5, 'visible', 'on')
+            set(handles.axes6, 'visible', 'on')
+            set(handles.axes7, 'visible', 'on')
+            set(handles.axes8, 'visible', 'on')
+            set(handles.text30, 'visible', 'on')
+            set(handles.text31, 'visible', 'on')
+            set(handles.pushbutton15, 'visible', 'on')
+            set(handles.text33, 'visible', 'on')
+            set(handles.text37, 'visible', 'off')
+            set(handles.text38, 'visible', 'off')
+            set(handles.text39, 'visible', 'off')
+            set(handles.text40, 'visible', 'off')
+            set(handles.text41, 'visible', 'off')
+            set(handles.radiobutton3, 'visible', 'on')
+            set(handles.togglebutton1, 'visible', 'on')
+            set(handles.edit5, 'visible', 'on')
+            
+            
+            % Used to Slice up Data
+            handles.slices = floor(handles.rows/400); % always want about 400 scans per slice
 
-        handles.rows = size(handles.data, 1); % update size
-    end
+            % number of rows to jump when going to next slice
+            handles.index = floor((handles.rows)/handles.slices);    
+
+            % check for gaps - if there are, generate fill records 
+            two_scans = 2.667 * 2 / 86400; % set up 2 scans as limit of acceptability delta time (in days)
+
+            gap_delta = handles.time(2:end) - handles.time(1:(end-1)); % dt vector throughout. an index indicating a gap in this vector is the start index for the gap in the time vector    
+
+            if any(gap_delta > two_scans)
+                gapInds = find(gap_delta > two_scans); % find the startInds of the gaps
+                one_scan = 2.667/86400;  % time of one scan in days  
+                gapTimes = handles.time(gapInds);
+                %datestr(gapTimes,'HH:MM:SS')
+                num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan ); % vector of number of missed scans (scalar if only one gap in data)
+                filler = mean(mean(data(:, floor(3*size(data,2)/4):end))); % choose a fill data value from scan data
+                for i = 1:length(num_missed_scans)    
+                    fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i));
+                    handles.time((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i))) = fill_times;% fix the timestamps
+                    %datestr(fill_times, 'HH:MM:SS')
+                    data((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i)), :) = filler*ones(num_missed_scans(i), handles.cols);  % fill with NaN so Matlab skips it in the plot
+                end
+
+                handles.rows = size(data, 1); % update size
+            end
 
 
-    if handles.cols == 300
-        % Diag data
-        handles.counts = handles.data(:, 153:300); %
-        handles.angle = handles.data(:,5:152);
-    else
-        % Normal data
-       handles.counts = handles.data(:, 108:211); % 211 to include calibration positions or 204 for earth scan only
-       handles.cal_cold = mean(handles.data(:, 204:207)); % Average of Cold Cal targets (nothing for diag data)
-       handles.cal_hot = mean(handles.data(:, 208:211)); % Average of internal Warm target
-       handles.angle = handles.data(:,4:107);
+            if handles.cols == 300
+                % Diag data
+                handles.counts = data(:, 153:300); %
+                handles.angle = data(:,5:152);
+            else
+                % Normal data
+               handles.counts = data(:, 108:211); % 211 to include calibration positions or 204 for earth scan only
+               handles.angle = data(:,4:107);
+            end
+            
+        otherwise 
+            
+            h=errordlg('Unrecognized instrument science file!');
+            uiwait(h)
     end
     
     handles.main_dt = mean(handles.time(2:end)-handles.time(1:(end-1)));
     set(handles.figure1, 'pointer', 'arrow') % hourglass pointer (nice aesthetic)
   
-    if handles.isOMPS
-        set(handles.axes5, 'visible', 0)
-        set(handles.axes6, 'visible', 0)
-        set(handles.text36, 'visible', 1)
-        set(handles.text42, 'visible', 1)
-        set(handles.text43, 'visible', 1)
-        set(handles.text44, 'visible', 1)
 
-    end
     
     guidata(hObject, handles);
 
@@ -297,14 +364,10 @@ function pushbutton2_Callback(varargin)
     end
     
     
-%     if any(isnan(handles.counts(startInd:endInd,1)))
-%         tmp = find( ~isnan(handles.counts(startInd:endInd,1)) ); % want to omit NaN from data gaps, as they throw off the aux plots
-%         startInd = tmp(1); endInd = tmp(end);
-%     end
     startIndAux = startInd ;% align timestamps
     endIndAux =  endInd;
     % align plot times in left and right (since they are diff rates we need a diff index range to match timestamps)    
-    if handles.main_file && handles.sc_file 
+    if handles.main_file && handles.sc_file
 
         [~, startIndAux] = min(abs(handles.time_sc - handles.time(startInd))) ;
 
@@ -442,119 +505,146 @@ function pushbutton2_Callback(varargin)
     if handles.main_file
                 
       
- 
-        handles.calcounts = counts;
-%             case 'Channel 1'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(1);
-%             case 'Channel 2'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(2);
-%             case 'Channel 3'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(3);
-%             case 'Channel 4'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(4);
-%             case 'Channel 5'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(5);
-%             case 'Channel 6'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(6);
-%             case 'Channel 7'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(7);
-%             case 'Channel 8'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(8);
-%             case 'Channel 9'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(9);
-%             case 'Channel 10'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(10);
-%             case 'Channel 11'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(11);
-%             case 'Channel 12'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(12);
-%             case 'Channel 13'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(13);
-%             case 'Channel 14'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(14);
-%             case 'Channel 15'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(15);
-%             case 'Channel 16'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(16);
-%             case 'Channel 17'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(17);
-%             case 'Channel 18'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(18);
-%             case 'Channel 19'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(19);
-%             case 'Channel 20'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(20);
-%             case 'Channel 21'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(21);
-%             case 'Channel 22'
-%                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(22);     
-
-        
-        if get(handles.togglebutton1, 'value') % if scan position data required
-
-            axes(handles.axes8);
-            angles_cols = size(handles.angle, 2);
+        switch handles.instr
             
-            handles.position_desired = str2double(get(handles.edit5, 'string'));
-            
-            ii=handles.position_desired;
+            case 'ATMS'
+        %             case 'Channel 1'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(1);
+        %             case 'Channel 2'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(2);
+        %             case 'Channel 3'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(3);
+        %             case 'Channel 4'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(4);
+        %             case 'Channel 5'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(5);
+        %             case 'Channel 6'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(6);
+        %             case 'Channel 7'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(7);
+        %             case 'Channel 8'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(8);
+        %             case 'Channel 9'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(9);
+        %             case 'Channel 10'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(10);
+        %             case 'Channel 11'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(11);
+        %             case 'Channel 12'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(12);
+        %             case 'Channel 13'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(13);
+        %             case 'Channel 14'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(14);
+        %             case 'Channel 15'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(15);
+        %             case 'Channel 16'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(16);
+        %             case 'Channel 17'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(17);
+        %             case 'Channel 18'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(18);
+        %             case 'Channel 19'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(19);
+        %             case 'Channel 20'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(20);
+        %             case 'Channel 21'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(21);
+        %             case 'Channel 22'
+        %                 handles.calcounts = (handles.counts - handles.cal)/handles.gains(22);     
 
-            if(ii>angles_cols)
-                ii = angles_cols;
-                set(handles.edit5,'string',num2str(angles_cols));
-            end
 
-            angle_data = handles.angle(startInd:endInd,ii);
+                if get(handles.togglebutton1, 'value') % if scan position data required
 
-            plot(handles.axes8, angle_data, handles.time(startInd:endInd), 'Linewidth', 1.5);
-            axis(handles.axes8, [min(angle_data) inf handles.time(startInd) handles.time(endInd)])
-            grid on;
-            xlabel('Angle (Deg)');
+                    axes(handles.axes8);
+                    angles_cols = size(handles.angle, 2);
 
-            pos_label = [' Position -- ',num2str(ii)];
+                    handles.position_desired = str2double(get(handles.edit5, 'string'));
 
-            title(' Scan Position ');
-            h = legend(pos_label);
-            set(h, 'Interpreter', 'none')
-            set(handles.axes8, 'YTickLabel', [])     
-            set(handles.axes8, 'XTickLabelRotation', 45) 
-            set(handles.axes8, 'YTickMode', 'auto')
+                    ii=handles.position_desired;
 
+                    if(ii>angles_cols)
+                        ii = angles_cols;
+                        set(handles.edit5,'string',num2str(angles_cols));
+                    end
+
+                    angle_data = handles.angle(startInd:endInd,ii);
+
+                    plot(handles.axes8, angle_data, handles.time(startInd:endInd), 'Linewidth', 1.5);
+                    axis(handles.axes8, [min(angle_data) inf handles.time(startInd) handles.time(endInd)])
+                    grid on;
+                    xlabel('Angle (Deg)');
+
+                    pos_label = [' Position -- ',num2str(ii)];
+
+                    title(' Scan Position ');
+                    h = legend(pos_label);
+                    set(h, 'Interpreter', 'none')
+                    set(handles.axes8, 'YTickLabel', [])     
+                    set(handles.axes8, 'XTickLabelRotation', 45) 
+                    set(handles.axes8, 'YTickMode', 'auto')
+
+                end
+
+                axes(handles.axes3);
+                if get(handles.radiobutton3, 'value') % If Earth Scan only requested ( only positions 1 thru 96 )
+                    end_position = 96;
+                else
+                    end_position = 104;
+                end
+
+                surf(1:end_position, handles.time(startInd:endInd), ...
+                    counts(startInd:endInd, 1:end_position) ...
+                    ,'EdgeColor','None', 'FaceColor', 'flat'); %  modify the col to zoom in scan (ie. 1:20)
+
+                view(2);
+                xlabel('Scan Position');
+
+                zlabel('Counts');
+
+                colormap jet;
+                colorbar('eastoutside');
+                axis tight;
+
+                set(handles.axes3, 'YTickLabel', [])   
+                set(handles.axes3, 'XTickLabelRotation', 45)               
+                title(['Science Scans ',num2str(startInd), ' - ', num2str(endInd)]);
+
+                set(handles.axes3, 'YTickLabelMode', 'auto') 
+                set(handles.axes3, 'XTickLabelRotation', 45)
+                set(handles.axes3, 'YTickLabelRotation', 45) 
+                set(handles.axes3, 'YTickMode', 'auto')        
+                datetick('y', 'HH:MM:SS', 'keeplimits', 'keepticks')
+                
+            case 'OMPS'
+                
+                
+                axes(handles.axes3);
+
+                ompsCol = 38; % cols in OMPS image
+                img = vec2mat(counts(:, startInd),ompsCol); % resize OMPS image vector
+                
+                surf(img,'EdgeColor','None', 'FaceColor', 'interp'); %  modify the col to zoom in scan (ie. 1:20)
+
+                view(2);
+                xlabel('Horizontal Dimmension');
+
+                zlabel('Counts');
+
+                colormap jet;
+                colorbar('eastoutside');
+                axis tight;
+
+                set(handles.axes3, 'YTickLabel', [])   
+                set(handles.axes3, 'XTickLabelRotation', 45)               
+                title(['OMPS Image: ' datestr(handles.time(endInd), 'dd-mmm-yyyy HH:MM:SS')]);
+
+                set(handles.axes3, 'YTickLabelMode', 'auto') 
+                set(handles.axes3, 'XTickLabelRotation', 45)
+                set(handles.axes3, 'YTickLabelRotation', 45) 
+                set(handles.axes3, 'YTickMode', 'auto')        
+                
         end
-
-        axes(handles.axes3);
-        if get(handles.radiobutton3, 'value') % If Earth Scan only requested ( only positions 1 thru 96 )
-            end_position = 96;
-        else
-            end_position = 104;
-        end
-
-        surf(1:end_position, handles.time(startInd:endInd), ...
-            handles.calcounts(startInd:endInd, 1:end_position) ...
-            ,'EdgeColor','None', 'FaceColor', 'flat'); %  modify the col to zoom in scan (ie. 1:20)
-        
-        view(2);
-        xlabel('Scan Position');
-       % if strcmp(str{val}, 'Uncalibrated')
-       
-        zlabel('Counts');
-%         else
-%             zlabel('Degrees K');
-%         end
-        colormap jet;
-        colorbar('eastoutside');
-        axis tight;
-
-       % set(handles.axes3, 'YTick', handles.time(startInd:endInd))
-        set(handles.axes3, 'YTickLabel', [])   
-        set(handles.axes3, 'XTickLabelRotation', 45)               
-        title(['Science Scans ',num2str(startInd), ' - ', num2str(endInd)]);
-        
-        set(handles.axes3, 'YTickLabelMode', 'auto') 
-        set(handles.axes3, 'XTickLabelRotation', 45)
-        set(handles.axes3, 'YTickLabelRotation', 45) 
-        set(handles.axes3, 'YTickMode', 'auto')        
-        datetick('y', 'HH:MM:SS', 'keeplimits', 'keepticks')
        
     end    
     
@@ -597,10 +687,8 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 %     handles.slices = str2double(tmp{2});
 
     edit4strnum = str2double(get(handles.edit4, 'string')); % # Slices
-    if handles.main_file, slices = ceil(handles.rows/400);
-    elseif handles.sc_file, slices = ceil(handles.rows_sc/400);
-    else, return
-    end
+    
+    slices = handles.slices;
     
     if edit4strnum == slices
         set(handles.edit4, 'string', '1');
@@ -624,10 +712,9 @@ function pushbutton4_Callback(hObject, eventdata, handles)
 %     handles.slices = str2double(tmp{2});
     
     edit4strnum = str2double(get(handles.edit4, 'string'));
-    if handles.main_file, slices = floor(handles.rows/400);
-    elseif handles.sc_file, slices = floor(handles.rows_sc/400);
-    else, return
-    end
+    
+    slices = handles.slices;
+    
     if edit4strnum == 1
         set(handles.edit4, 'string', num2str(slices));
     elseif edit4strnum > handles.slices
@@ -766,7 +853,7 @@ function pushbutton8_Callback(hObject, eventdata, handles)
     else
        set(handles.text15,'String', ['File Chosen: ', name_sc]);
        
-       if handles.main_file && path_sc~=handles.prevPath
+       if handles.main_file && ~strcmp(path_sc, handles.prevPath)
            h = warndlg('Warning: Spacecraft file is not from the same time period as the Science file');
            uiwait(h)
        else
@@ -833,8 +920,12 @@ function pushbutton8_Callback(hObject, eventdata, handles)
     micsec_sc = handles.data_sc(: ,3);
 
     handles.time_sc = dates_sc + handles.epoch + (millisec_sc/1000 + micsec_sc/1000000)/86400; % setting time vector for sc data
-    handles.slices = floor(handles.rows_sc/400); % always want about 400 scans per slice
-%    set(handles.text4, 'string', ['Number of Slices: ' num2str(handles.slices)])
+    
+    
+    if ~handles.main_file
+        handles.slices = floor(handles.rows_sc/400); % always want about 400 scans per slice
+    end
+        %    set(handles.text4, 'string', ['Number of Slices: ' num2str(handles.slices)])
     handles.index = floor((handles.rows_sc)/handles.slices);
       
     

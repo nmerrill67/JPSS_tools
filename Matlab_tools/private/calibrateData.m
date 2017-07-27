@@ -2,6 +2,7 @@ function [calibData, y_label] = calibrateData(data, DBDptr, instruments)
     % updates handles fields for calibrated data. THis will work for a
     % calibration with any number of coeeficients. Theoretically to +inf #
     % coefficients (obviously we would run out of memory, but you get the
+    % [calibData, y_label] = calibrateData(data, DBDptr, instruments)
     % idea)
     % data           n x p data matrix of raw counts
     % DBDptr         ptr to the handles.DBDptr field
