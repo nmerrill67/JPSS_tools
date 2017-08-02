@@ -200,15 +200,18 @@ function pushbutton1_Callback(hObject, eventdata, handles)
     switch handles.instr % check which instrument we are looking at. Load data in format for that instrument
         
         case 'OMPS'
+            
+            if isfield(handles, 'data_pow'), handles = rmfield(handles, 'data_pow'); end % delete useless matrix for OMPS 
+            
             set(handles.axes7, 'visible', 'off')
             set(handles.axes8, 'visible', 'off')
             set(handles.axes5, 'visible', 'off')
             set(handles.axes6, 'visible', 'off')
             set(handles.text37, 'visible', 'on')
             set(handles.text38, 'visible', 'on')
-            set(handles.text39, 'visible', 'on')
             set(handles.text40, 'visible', 'on')
             set(handles.text41, 'visible', 'on')
+            set(handles.text42, 'visible', 'on')
             set(handles.radiobutton3, 'visible', 'off')
             set(handles.text30, 'visible', 'off')
             set(handles.text31, 'visible', 'off')
@@ -216,7 +219,28 @@ function pushbutton1_Callback(hObject, eventdata, handles)
             set(handles.text33, 'visible', 'off')                   
             set(handles.togglebutton1, 'visible', 'off')
             set(handles.edit5, 'visible', 'off')
-
+            set(handles.text43, 'visible', 'on')
+            set(handles.text44, 'visible', 'on')
+            set(handles.text45, 'visible', 'on')
+            set(handles.text46, 'visible', 'on')
+            set(handles.text47, 'visible', 'on')            
+            set(handles.text48, 'visible', 'on')
+            % these last six are actually popupmenus now
+            set(handles.text49, 'visible', 'on')
+            set(handles.text50, 'visible', 'on')
+            set(handles.text51, 'visible', 'on')
+            set(handles.text52, 'visible', 'on')
+            set(handles.text53, 'visible', 'on')
+            set(handles.text54, 'visible', 'on')
+            set(handles.listbox2, 'visible', 'off')      
+            set(handles.listbox3, 'visible', 'off')      
+            set(handles.listbox4, 'visible', 'off')      
+            set(handles.listbox5, 'visible', 'off')      
+            set(handles.text18, 'visible', 'off')      
+            set(handles.text19, 'visible', 'off')      
+            set(handles.text28, 'visible', 'off')      
+            set(handles.text29, 'visible', 'off')      
+                      
             
             handles.slices = handles.rows; % one OMPS img per row
             handles.index = 1 ; % number of rows to jump when going to next slice AKA next row
@@ -226,19 +250,29 @@ function pushbutton1_Callback(hObject, eventdata, handles)
             startPix = find(varNames == pixVars(1)); % index of pix start
             endPix = find(varNames == pixVars(end));
             
-            handles.counts = data(:,startPix:endPix)'; % extract counts. Transpose to make it coumn major for speed
+            handles.counts = data(:,startPix:endPix)'; % extract counts. Transpose to make it column major for speed
             handles.ompsTlm = data(:, 1:startPix-1); % get the rest of the tlm data
             
             % Find the non-optional parameters
             handles.TC_T_CCD_ind = find(varNames=='TC_T_CCD');
             handles.NP_T_CCD_ind = find(varNames=='NP_T_CCD');
-            handles.TC_T_COND_BAR_ind = find(varNames=='TC_T_COND_BAR');
-            handles.NP_T_COND_BAR_ind = find(varNames=='NP_T_COND_BAR');
-            handles.NP_T_HOUSING_ind = find(varNames=='NP_T_HOUSING');
-            handles.TC_T_HOUSING_ind = find(varNames=='TC_T_HOUSING');
+            handles.M_T_MTR_DRV_BD_ind = find(varNames=='M_T_MTR_DRV_BD');
+            handles.NP_P_HTR_SET_ind = find(varNames=='NP_P_HTR_SET');
+            handles.TC_P_HTR_SET_ind = find(varNames=='TC_P_HTR_SET');
            
+            % Optional Parameters 
+            set(handles.text49, 'string', varNames(1:startPix-1))
+            set(handles.text50, 'string', varNames(1:startPix-1))
+            set(handles.text51, 'string', varNames(1:startPix-1))
+            set(handles.text52, 'string', varNames(1:startPix-1))
+            set(handles.text53, 'string', varNames(1:startPix-1))
+            set(handles.text54, 'string', varNames(1:startPix-1))
+            
+            
             
         case 'ATMS'
+            
+            if isfield(handles, 'ompsTlm'), handles = rmfield(handles, 'ompsTlm'); end % delete this data if it exists. It is useless and taking up memory space
             
             set(handles.axes5, 'visible', 'on')
             set(handles.axes6, 'visible', 'on')
@@ -250,12 +284,35 @@ function pushbutton1_Callback(hObject, eventdata, handles)
             set(handles.text33, 'visible', 'on')
             set(handles.text37, 'visible', 'off')
             set(handles.text38, 'visible', 'off')
-            set(handles.text39, 'visible', 'off')
             set(handles.text40, 'visible', 'off')
             set(handles.text41, 'visible', 'off')
+            set(handles.text42, 'visible', 'off')
             set(handles.radiobutton3, 'visible', 'on')
             set(handles.togglebutton1, 'visible', 'on')
             set(handles.edit5, 'visible', 'on')
+            set(handles.text43, 'visible', 'off')
+            set(handles.text44, 'visible', 'off')
+            set(handles.text45, 'visible', 'off')
+            set(handles.text46, 'visible', 'off')
+            set(handles.text47, 'visible', 'off')            
+            set(handles.text48, 'visible', 'off')
+            set(handles.text49, 'visible', 'off')
+            set(handles.text50, 'visible', 'off')
+            set(handles.text51, 'visible', 'off')
+            set(handles.text52, 'visible', 'off')
+            set(handles.text53, 'visible', 'off')
+            set(handles.text54, 'visible', 'off')      
+            
+            set(handles.listbox2, 'visible', 'on')      
+            set(handles.listbox3, 'visible', 'on')      
+            set(handles.listbox4, 'visible', 'on')      
+            set(handles.listbox5, 'visible', 'on')      
+            set(handles.text18, 'visible', 'on')      
+            set(handles.text19, 'visible', 'on')      
+            set(handles.text28, 'visible', 'on')      
+            set(handles.text29, 'visible', 'on')      
+            
+            
             
             
             % Used to Slice up Data
@@ -265,22 +322,22 @@ function pushbutton1_Callback(hObject, eventdata, handles)
             handles.index = floor((handles.rows)/handles.slices);    
 
             % check for gaps - if there are, generate fill records 
-            two_scans = 2.667 * 2 / 86400; % set up 2 scans as limit of acceptability delta time (in days)
+            two_scans = 0.0180 * 2 / 86400; % set up 2 scans as limit of acceptability delta time (in days)
 
             gap_delta = handles.time(2:end) - handles.time(1:(end-1)); % dt vector throughout. an index indicating a gap in this vector is the start index for the gap in the time vector    
 
-            if any(gap_delta > two_scans)
+            if 0 % any(gap_delta > two_scans)
                 gapInds = find(gap_delta > two_scans); % find the startInds of the gaps
-                one_scan = 2.667/86400;  % time of one scan in days  
+                one_scan = 0.0180/86400;  % time of one scan in days  
                 gapTimes = handles.time(gapInds);
                 %datestr(gapTimes,'HH:MM:SS')
                 num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan ); % vector of number of missed scans (scalar if only one gap in data)
                 filler = mean(mean(data(:, floor(3*size(data,2)/4):end))); % choose a fill data value from scan data
                 for i = 1:length(num_missed_scans)    
                     fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i));
-                    handles.time((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i))) = fill_times;% fix the timestamps
+                    handles.time((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i) - 1)) = fill_times;% fix the timestamps
                     %datestr(fill_times, 'HH:MM:SS')
-                    data((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i)), :) = filler*ones(num_missed_scans(i), handles.cols);  % fill with NaN so Matlab skips it in the plot
+                    data((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i) - 1), :) = filler*ones(num_missed_scans(i), handles.cols);  % fill with NaN so Matlab skips it in the plot
                 end
 
                 handles.rows = size(data, 1); % update size
@@ -414,7 +471,7 @@ function pushbutton2_Callback(varargin)
         plot(data1, X1, 'Linewidth', 1.5);
         set(handles.axes8, 'YTickLabelRotation', 45)  
         set(handles.axes8, 'YTickLabelMode', 'auto')  
-        axis(handles.axes8, [mean(mean(data1))-1 mean(max(data1))+1 X1(1) X1(end)])
+        axis(handles.axes8, [mean(mean(data1))-1 mean(max(data1))+1 X1(1)-1 X1(end)+1])
         h = legend(x1label, 'Location', 'Best');
         set(h, 'Interpreter', 'none')   
         title('AUX 1 Data')
@@ -440,7 +497,7 @@ function pushbutton2_Callback(varargin)
 
         set(handles.axes7, 'YTickLabel', [])
         %datestr(X1, 'HH:MM:SS')
-        axis(handles.axes7, [min(min(data2))-1 max(max(data2))+1 X1(1) X1(end)])
+        axis(handles.axes7, [min(min(data2))-1 max(max(data2))+1 X1(1)-1 X1(end)+1])
         h = legend(x2label, 'Location', 'Best');
         set(h, 'Interpreter', 'none')       
         title('AUX 2 Data')
@@ -464,7 +521,7 @@ function pushbutton2_Callback(varargin)
         plot(data3,X1, 'Linewidth', 1.5);
         set(handles.axes5, 'YTick', [])    
         set(handles.axes5, 'YTickLabel', [])
-        axis(handles.axes5, [max(min(data3))-1 max(max(data3))+1 X1(1) X1(end)])
+        axis(handles.axes5, [max(min(data3))-1 max(max(data3))+1 X1(1)-1 X1(end)+1])
         h = legend(x3label, 'Location', 'Best');
         set(h, 'Interpreter', 'none') 
         
@@ -487,7 +544,7 @@ function pushbutton2_Callback(varargin)
         yticks(handles.axes6, 'auto')    
         set(handles.axes6, 'YTickLabelRotation', 45)
 
-        axis(handles.axes6, [min(min(data4))-1 max(max(data4))+1 X1(1) X1(end)])
+        axis(handles.axes6, [min(min(data4))-1 max(max(data4))+1 X1(1)-1 X1(end)+1])
         h = legend(x4label, 'Location', 'Best');
         set(h, 'Interpreter', 'none')
        
@@ -596,7 +653,7 @@ function pushbutton2_Callback(varargin)
                 surf(1:end_position, handles.time(startInd:endInd), ...
                     counts(startInd:endInd, 1:end_position) ...
                     ,'EdgeColor','None', 'FaceColor', 'flat'); %  modify the col to zoom in scan (ie. 1:20)
-
+              
                 view(2);
                 xlabel('Scan Position');
 
@@ -616,19 +673,75 @@ function pushbutton2_Callback(varargin)
                 set(handles.axes3, 'YTickMode', 'auto')        
                 datetick('y', 'HH:MM:SS', 'keeplimits', 'keepticks')
                 
+                grid(handles.axes8, 'on')
+                grid(handles.axes3, 'on')
+                grid(handles.axes5, 'on')
+                grid(handles.axes6, 'on')   
+                grid(handles.axes7, 'on')    
+
+                % Power supply info
+                if handles.pow_file && (handles.main_file || handles.sc_file)
+
+
+                    if handles.main_file, [~, indPow] = min(abs(handles.time_pow - handles.time(startInd))) ;
+                    else, [~, indPow] = min(abs(handles.time_pow - handles.time_sc(startInd))) ; 
+                    end
+
+                    AB = handles.data_pow(indPow, :);
+                    if AB(1)
+                        set(handles.text31, 'String' ,'A')
+                    elseif AB(2)
+                        set(handles.text31, 'String' ,'B')
+                    else
+                       set(handles.text31, 'String' ,'None')
+                    end
+
+                end                
+                
+                
             case 'OMPS'
                 
                 
-                axes(handles.axes3);
+                % We need the database to calibrate the non-optional parameters. If it does not exist yet, get it from the new databse fnc button           
+                if isempty(handles.DBDptr), handles = pushbutton11_Callback(hObject, eventdata, handles); end
 
+                
+                nonOptData = [handles.ompsTlm(startInd, handles.TC_T_CCD_ind) ... 
+                    handles.ompsTlm(startInd, handles.NP_T_CCD_ind) ... 
+                    handles.ompsTlm(startInd, handles.M_T_MTR_DRV_BD_ind ) ...
+                    handles.ompsTlm(startInd, handles.NP_P_HTR_SET_ind) ...
+                    handles.ompsTlm(startInd,  handles.TC_P_HTR_SET_ind) ];  % put the nonoptional dta in one row matrix for calibration
+                
+                
+                nonOptLabs = {'OMTCCCDT'; 'OMNPCCDT';  'OMMDBT'; ...
+                    'OMNPWNDSP'; 'OMTCWNDSP'}; % These points have different names in the LFight tlm database
+                
+                [nonOptData, nonOptLabsUnits] = calibrateData(nonOptData, handles.DBDptr, nonOptLabs); 
+                
+                unitsOnly = regexp(nonOptLabsUnits, nonOptLabs, 'split'); % extract just the units
+                
+                % populate non-optional parameters
+                set (handles.text37, 'string' , ['NP CCD Temp: ', num2str(nonOptData(1)), unitsOnly{1}{end}])
+                set (handles.text38, 'string' , ['TC CCD Temp: ', num2str(nonOptData(2)), unitsOnly{2}{end}])
+                set (handles.text40, 'string' , ['Mtr Driver Board Temp: ', num2str(nonOptData(3)), unitsOnly{3}{end}])
+                set (handles.text41, 'string' , ['NP Heater Power: ', num2str(nonOptData(4)), unitsOnly{4}{end}])
+                set (handles.text42, 'string' , ['TC Heater Power: ', num2str(nonOptData(5)), unitsOnly{5}{end}])
+
+                
+                axes(handles.axes3);
+                
+                
                 ompsCol = 38; % cols in OMPS image
+                
                 img = vec2mat(counts(:, startInd),ompsCol); % resize OMPS image vector
+                
+                
                 
                 surf(img,'EdgeColor','None', 'FaceColor', 'interp'); %  modify the col to zoom in scan (ie. 1:20)
 
                 view(2);
-                xlabel('Horizontal Dimmension');
-
+                xlabel('Spatial Dimmension');
+                ylabel('Wavelength');
                 zlabel('Counts');
 
                 colormap jet;
@@ -636,13 +749,31 @@ function pushbutton2_Callback(varargin)
                 axis tight;
 
                 set(handles.axes3, 'YTickLabel', [])   
-                set(handles.axes3, 'XTickLabelRotation', 45)               
                 title(['OMPS Image: ' datestr(handles.time(endInd), 'dd-mmm-yyyy HH:MM:SS')]);
 
-                set(handles.axes3, 'YTickLabelMode', 'auto') 
-                set(handles.axes3, 'XTickLabelRotation', 45)
-                set(handles.axes3, 'YTickLabelRotation', 45) 
-                set(handles.axes3, 'YTickMode', 'auto')        
+                set(handles.axes3, 'XTickLabel', [])
+                
+                
+                
+                % Optional parameter text boxes. Set these based on
+                % popupmenu selection. The popup menus were originally
+                % text, so they are called text49-54
+                
+                ind1 = get(handles.text49, 'value');
+                ind2 = get(handles.text50, 'value');
+                ind3 = get(handles.text51, 'value');
+                ind4 = get(handles.text52, 'value');
+                ind5 = get(handles.text53, 'value');
+                ind6 = get(handles.text54, 'value');
+                
+                namesArr = get(handles.text49, 'string'); % we can just take the first, since they are all the same for all the popupmenus
+                
+                set(handles.text43, 'string', strcat(namesArr(ind1), {': '}, {num2str(handles.ompsTlm(startInd, ind1))} ))
+                set(handles.text44, 'string', strcat(namesArr(ind2), {': '}, {num2str(handles.ompsTlm(startInd, ind2))} ))
+                set(handles.text45, 'string', strcat(namesArr(ind3), {': '}, {num2str(handles.ompsTlm(startInd, ind3))} ))
+                set(handles.text46, 'string', strcat(namesArr(ind4), {': '}, {num2str(handles.ompsTlm(startInd, ind4))} ))
+                set(handles.text47, 'string', strcat(namesArr(ind5), {': '}, {num2str(handles.ompsTlm(startInd, ind5))} ))
+                set(handles.text48, 'string', strcat(namesArr(ind6), {': '}, {num2str(handles.ompsTlm(startInd, ind6))} ))
                 
         end
        
@@ -650,30 +781,7 @@ function pushbutton2_Callback(varargin)
     
     ylabel(handles.axes8, 'Time (HH:MM:SS)')
    
-    grid(handles.axes8, 'on')
-    grid(handles.axes3, 'on')
-    grid(handles.axes5, 'on')
-    grid(handles.axes6, 'on')   
-    grid(handles.axes7, 'on')    
-    
-    % Power supply info
-    if handles.pow_file && (handles.main_file || handles.sc_file)
 
-
-        if handles.main_file, [~, indPow] = min(abs(handles.time_pow - handles.time(startInd))) ;
-        else, [~, indPow] = min(abs(handles.time_pow - handles.time_sc(startInd))) ; 
-        end
-        
-        AB = handles.data_pow(indPow, :);
-        if AB(1)
-            set(handles.text31, 'String' ,'A')
-        elseif AB(2)
-            set(handles.text31, 'String' ,'B')
-        else
-           set(handles.text31, 'String' ,'None')
-        end
-             
-    end
     guidata(hObject, handles);
 
 end

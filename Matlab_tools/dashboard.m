@@ -1903,10 +1903,11 @@ function pushbutton21_Callback(hObject, eventdata, handles)
     % hObject    handle to instr_button (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    if isunix    
-        ! ./Docs/BASIC_INSTRUCTIONS.pdf & exit
+    if isunix 
+        % Must have evince installed
+        ! evince Docs/BASIC_INSTRUCTIONS.pdf 
     else % windows
-        ! .\Docs\BASIC_INSTRUCTIONS.pdf & exit  
+        ! .\Docs\BASIC_INSTRUCTIONS.pdf
     end
 end
 

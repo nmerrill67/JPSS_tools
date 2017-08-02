@@ -17,10 +17,10 @@ function [calibData, y_label] = calibrateData(data, DBDptr, instruments)
         uiwait(d)
         return
     end
-    
     [coeffMat, y_label] = calcCoeffs(DBDptr, instruments); % # instruments long cell array containing coefficient column vecs 
     y_label = cellstr(y_label); % convert to cell array
     calibData_tmp = zeros(size(data));
+    
     for k = 1:length(instruments)
         coeffI = coeffMat{k};
         di = data(:,k).^(0:length(coeffI)-1); % creates vector [1_ x^1 x^2 ...]

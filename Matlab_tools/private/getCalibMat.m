@@ -5,7 +5,7 @@ function [DBDptr, fname] = getCalibMat()
         % columns in any order (Future releases may do this, but not sure)
         % DBDptr     cell array - the matrix of [units conversion mnemonic description S/S type APID (byte:bit)] 
         % filename - name of DB file stripped of extension 
-
+    pwd;
     fname = writeCSVForDecom();
     if isempty(fname) % filename is '' if user presses cancel
         DBDptr = '';
@@ -15,13 +15,12 @@ function [DBDptr, fname] = getCalibMat()
         return
     end
 
-    filename = fullfile(pwd, '.DBD_CSVs',strcat(fname, '.txt'));
+    filename = fullfile(pwd, 'DBD_CSVs',strcat(fname, '.txt'));
 
     h = waitbar(0, 'Excel file already loaded. Loading Database ...');
     % Parse each line of the data 
     DBDptr = readtable(filename, 'delimiter', ';'); 
     waitbar(1/2, h)
-    DBDptr = DBDptr{:,:}; % drop the table wrapper and just make a cell array
 
     waitbar(3/4, h)
     
