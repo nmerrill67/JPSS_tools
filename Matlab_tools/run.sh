@@ -1,1 +1,0 @@
-cd ../Matlab_tools && matlab -nodesktop -nosplash -r dashboard

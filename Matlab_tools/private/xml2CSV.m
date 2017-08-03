@@ -43,12 +43,18 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
     ins_names_out = fnames_out; % this will contain the corresponding instrument names
     
     insNames = {'omps'; 'atms'; 'ceres'; 'cris'; 'viirs'}; % for use in determining that we've extracted the xml from all the necessary instrument databases
-    scNames = {'npp'; 'j1'; 'j2' ; 'j3'; 'j4'}; % incase this is a spacecraft database, use this to name the database for the decom engine. 
-    scNamesActual = {'npp'; 'jpss1'; 'jpss2' ; 'jpss3'; 'jpss4'}; %  for use in figuring out which of te above names to use, since the filenaming scheme uses these mnemonics for the spacecrafs
- 
     
-    for j = 1:lenDnT % iterate through all chosen XML dirs, where each one is specific to an instrument or the spacecraft bus. 
-        dname = dnames_tot{j};
+    for j = 1:lenDnT
+        % iterate through all chosen XML root dirs, where each one is specific to an instrument or the spacecraft bus. 
+        % It is confusing that we loop through 'dname', then extract
+        % 'dnames' form dname; however, this is due to the fact that each
+        % XML root directory (dname) may have many subdirectories that
+        % contain different XML files that we need to read. In the case of
+        % a SC database, the user is only alowed to choose one database,
+        % and only the TlmXML subdirectory contains useful info, so dnames
+        % refers to only one directory.
+        
+        dname = dnames_tot{j}; % the directory name for the root of the XML file tree.
                 
         if ~isSC, d = dir([dname '/**/*.xml']); % get dir info for all subdirs too. specify wildcard to avoid '..' and '.'
         else
@@ -70,18 +76,18 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
 
         
         if ~isSC, instr = insNames(ismember(insNames, strsplit(dnames, {'_', '-'}))); % figure out which instrument we are dealing with if this is a Sci database
-        else, instr = scNames(ismember(scNamesActual, strsplit(dnames, {'/','\','tlm'}))); % figure out whic SC we are looking at if this is a SC database
+        else, instr = getScName(dname); % figure out whic SC we are looking at if this is a SC database. THis info is located in the VersionNameXML folder.
         end
         
-        if isempty(instr) || length(instr)~=1
+        if ~isSC && (isempty(instr) || length(instr)~=1)
             h = errordlg('Please choose a correct directory. It must contain XML files from only one instrument');
             uiwait(h)
             continue
         end
 
         if ~isSC, [isMember, mInd] = ismember(instr, insArr);
-        % We don't know the SC before, so the insStr arg is always 'spacecraft', and the user will only be prompted to choose one XMl folder for SC data.
-    %Therefore we don;t have to check tat the user got all of the required XMLs, and can set isMember to 1 always, signalling that the user chose the corret folder for the correct SC.       
+        % We don't know the SC needed before running decomm, so the insStr arg is always 'spacecraft', and the user will only be prompted to choose one XMl folder for SC data.
+        %Therefore we don't have to check tat the user got all of the required XMLs, and can set isMember to 1 always, signalling that the user chose the corret folder for the correct SC.       
         else, isMember = 1; mInd = 1;
         end
         
@@ -97,7 +103,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
         h = waitbar(0, ['Reading ' instr ' XML files']);
         len = length(fnames);
         
-        if isSC % decide if we need to decode science daabase xml or spacecraft database xml. St the correct function to use accordingly, because the formats are very different
+        if isSC % decide if we need to decode science database xml or spacecraft database xml. St the correct function to use accordingly, because the formats are very different
             xml2ArrFun = @xml2ArrSC;
         else
             xml2ArrFun = @xml2ArrSci;
@@ -112,7 +118,8 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
             catch; end
             
             if isempty(tmp), continue; end % useless file for decom -- there was only heade info, which is not needed
-            T = [T; tmp];
+           
+            T = [T; tmp]; % append the extracted table
             
         end
         
@@ -127,7 +134,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
         ins_names_out{j} = instr;
         
         writetable(array2table(T(:,1:4),'VariableNames', V(1:4)), ['../Decom_tools/database_CSVs/' spl{end} '.csv'], 'Delimiter', ','); 
-        writetable(array2table(T,'VariableNames', V), ['DBD_CSVs' spl{end} '.csv'], 'Delimiter', ';'); 
+        writetable(array2table(T,'VariableNames', V), ['DBD_CSVs/' spl{end} '.csv'], 'Delimiter', ';'); 
 
   
     end
@@ -149,6 +156,16 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
         ins_names_out = strip(string(char(ins_names_out{:}, ins_names_out_recurse{:}))); 
         
     end
+end
+
+function scName = getScName(dname)
+
+% extract the SC name from the VersionNameXML file. THis will be of form
+% J1, J2, ...
+    vsName = xml2struct(fullfile(dname, 'VersionNameXML', 'VersionName.xml')); % extract the version name struct
+    
+    scName = lower(vsName.VerUnit.EqId); % this field will be of form J1, J2, .... Make it lowercase for the decomm engine's convention 
+
 end
 
 function T = xml2ArrSci(file, varargin)
@@ -246,7 +263,7 @@ function T = xml2ArrSC(file, varargin)
         
         % Now do some math to calculate the byte:bit structure with the
         % format /byte:bitStart-bitEnd
-        bytebit = fixByteBit(byteStart, sizeInBits, str2double(leftoverBit))
+        bytebit = fixByteBit(byteStart, sizeInBits, str2double(leftoverBit));
         
         T(i, 4) = bytebit; 
         
