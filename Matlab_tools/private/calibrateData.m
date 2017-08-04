@@ -47,7 +47,7 @@ function [calibData, y_label] = calibrateData(data, DBDptr, instruments)
         
         
         coeffMat_tmp = cell(length(instruments),1); 
-        instrDB = char(DBDptr(:,3));
+        instrDB = char(DBDptr.mnemonic);
         
         i = 1;
 
@@ -55,13 +55,14 @@ function [calibData, y_label] = calibrateData(data, DBDptr, instruments)
         
         uncalib = '';
 
-        while i <= length(instruments)
+        while i <= length(instruments) % loop through all the instruments chosen by the user
+           
            tmp = instruments(i);
-           ii = tmp{1};
+           ii = tmp{1}; % pull out cell array wrapper
          
-           j = find(strcmp(strip(ii), strip(string(instrDB))), 1);
+           j = find(strcmp(strip(ii), strip(string(instrDB))), 1); % find the instrument in the database
 
-           if isempty(j) || j > size(instrDB, 1)
+           if isempty(j) || j > size(instrDB, 1) % if the instrument is not in the database, let the user know with uihelper function
    
                 [coeffMat_tmp{i}, i] = uiHelper(i);
                 ylabel_tmp = ylabelHelper(ii, ylabel_tmp);
@@ -69,9 +70,9 @@ function [calibData, y_label] = calibrateData(data, DBDptr, instruments)
                 continue
            end
            
-           cellCoeff = DBDptr(j,2);
+           cellCoeff = DBDptr.conversion(j);  % c0=<num> c1=<num> ....
 
-           if isempty(cellCoeff{1}) || ~strcmp(cellCoeff{1}(1),'c')
+           if isempty(cellCoeff{1}) || ~strcmp(cellCoeff{1}(1),'c') % No conversion available. Calibration is impossible. Or there is piecewise calibration, which is unsupported
                 [coeffMat_tmp{i}, i] = uiHelper(i);
                 ylabel_tmp = ylabelHelper(ii, ylabel_tmp);
                 uncalib = uncalibHelper(uncalib, ylabel_tmp);
@@ -81,17 +82,19 @@ function [calibData, y_label] = calibrateData(data, DBDptr, instruments)
            coeff = extrCoeffFromStr(cellCoeff{1}); % get the vector of polynomial coefficients
            coeffMat_tmp{i} = coeff; % place the variable size vector in the cell array
            if i==1
-               ylabel_tmp = char(strcat({ii}, {' ('}, DBDptr(j,1), {')'}));
+               ylabel_tmp = char(strcat({ii}, {' ('}, DBDptr.units(j), {')'})); % rename the mnemonic with the units appended
            else
-               ylabel_tmp = char(ylabel_tmp, char(strcat({ii}, {' ('}, DBDptr(j,1), {')'})));
+               ylabel_tmp = char(ylabel_tmp, char(strcat({ii}, {' ('}, DBDptr.units(j), {')'})));
            end
            
            i = i + 1;
         end
-        if ~strcmp(uncalib, '')
+        
+        if ~strcmp(uncalib, '') % If any data are left uncalibrated
             h = warndlg(strcat({char(uncalib)},{' are not available for calibration. Only raw counts are available. This instrument will be plotted in raw counts'}));
             uiwait(h)
         end
+        
         ylabel = ylabel_tmp;
         coeffMat = coeffMat_tmp;
     end 

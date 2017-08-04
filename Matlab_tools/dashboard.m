@@ -169,41 +169,6 @@ end
 
 
 
-% --- Executes on button press in pushbutton3.
-function pushbutton3_Callback(hObject, eventdata, handles) % CERES PUSHBUTTON
-    % hObject    handle to pushbutton3 (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-end
-
-% --- Executes on button press in pushbutton4.
-function pushbutton4_Callback(hObject, eventdata, handles) % CRIS PUSHBUTTON
-    % hObject    handle to pushbutton4 (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-end
-
-% --- Executes on button press in pushbutton5.
-function pushbutton5_Callback(hObject, eventdata, handles)  % OMPS BUSHBUTTON
-    % hObject    handle to pushbutton5 (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-end
-
-% --- Executes on button press in pushbutton6.
-function pushbutton6_Callback(hObject, eventdata, handles) % RBI PUSHBUTTON
-    % hObject    handle to pushbutton6 (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-end
-
-% --- Executes on button press in pushbutton7.
-function pushbutton7_Callback(hObject, eventdata, handles) % VIIRS PUSHBUTTON
-    % hObject    handle to pushbutton7 (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-end
-
 % --- Executes on button press in pushbutton8.
 function pushbutton8_Callback(hObject, eventdata, handles) % FFT PUSHBUTTON
     % hObject    handle to pushbutton8 (see GCBO)
@@ -1460,7 +1425,7 @@ function pushbutton15_Callback(hObject, eventdata, handles)
     % hObject    handle to pushbutton15 (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    % hanldes.DBDptr - [units conversion mnemonic description S/S type APID (byte:bit)] 
+    % hanldes.DBDptr - struct with fields [units conversion mnemonic description S/S type APID (byte:bit)] 
 
     if isempty(handles.DBDptr), [handles.DBDptr, handles.DBname] = getCalibMat(); end % may need to load db file
      
@@ -1479,16 +1444,15 @@ function pushbutton15_Callback(hObject, eventdata, handles)
         handles.y3label = handles.labels3(1, handles.indiciesA2);  
     end
 
-    [tlmName, unqRows, ~] = unique(handles.DBDptr(:,3)); % mnemonic (some repeats, use unique to find the new indices
-    descr = handles.DBDptr(unqRows,4); 
-    SS = handles.DBDptr(unqRows,5);
-    type = handles.DBDptr(unqRows,6);
-    apid = handles.DBDptr(unqRows,7);
-    bb = handles.DBDptr(unqRows, 8); % byte:bit
+    % TODO display the repeats as to not confuse the user
+    [tlmName, unqRows, ~] = unique(handles.DBDptr.mnemonic); % mnemonic (some repeats, use unique to find the new indices
+    descr = handles.DBDptr.description(unqRows); 
+    type = handles.DBDptr.type(unqRows);
+    apid = handles.DBDptr.APID(unqRows);
+    bb = handles.DBDptr.byte_bit(unqRows); % byte:bit
 
     names = '';
     descrips = '';
-    SSs = '';
     types = '';
     apids = '';
     bbs = '';
@@ -1966,7 +1930,7 @@ function radiobutton18_Callback(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
 
     % Hint: get(hObject,'Value') returns toggle state of radiobutton18
-    if get(handles.radiobutton18, 'value') && isempty(handles.DBDptr) % empty array
+    if get(handles.radiobutton18, 'value') && isempty(handles.DBDptr)c
         [handles.DBDptr, handles.DBname] = getCalibMat(); % units, calibration, mnemonic, description
         if isempty(handles.DBDptr)
             set(handles.radiobutton18, 'value', 0)
@@ -1984,7 +1948,7 @@ function radiobutton17_Callback(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
 
     % Hint: get(hObject,'Value') returns toggle state of radiobutton17 
-    if get(handles.radiobutton17, 'value') && ~sum(size(handles.DBDptr)) % empty array
+    if get(handles.radiobutton17, 'value') && isempty(handles.DBDptr) % empty string array if DBDptr has not been made into a struct yet
         [handles.DBDptr, handles.DBname] = getCalibMat(); % units, calibration, mnemonic
         if isempty(handles.DBDptr)
             set(handles.radiobutton18, 'value', 0)

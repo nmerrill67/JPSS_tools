@@ -3,7 +3,6 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
 % later Calibration use.
 % insStr - comma separated string of instrument databases needed
 
-    fnames_out = '';
 
     insArr = lower(strip(string(strsplit(insStr, ',')))); % coerce comma separated list into string array 
     
@@ -21,9 +20,12 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
     ins_names_out = "";
     
     while ~isCorrectDirCount
-        % use this open-sourced multi=select uigetdir to select multiple XML folders for multiple instruments
-        if ~isSC ,dnames_tot = uipickfiles('FilterSpec', 'DBD_XML', 'Prompt', ['Choose the directories for at least ' insStr ' science XML databases']);
-        else, dnames_tot = string(uigetdir('DBD_XML', 'Choose the directory containing the Spacecraft database')); % convert the output to string so that the length comparison is not based on number of chars in string
+        % use this open-sourced multi-select uigetdir (uipickfiles) to select multiple XML folders for multiple instruments
+        if ~isSC 
+            h = msgbox(['Choose the directories for at least ' insStr ' science XML databases']);
+            uiwait(h)
+            dnames_tot = uipickfiles('FilterSpec', 'DBD_XML', 'Prompt', ['Choose the directories for at least ' insStr ' science XML databases']);
+        else, dnames_tot = string(uigetdir('DBD_XML', 'Choose the directory containing the required Spacecraft database')); % convert the output to string so that the length comparison is not based on number of chars in string
         end
         
         lenDnT = length(dnames_tot);
@@ -43,6 +45,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
     ins_names_out = fnames_out; % this will contain the corresponding instrument names
     
     insNames = {'omps'; 'atms'; 'ceres'; 'cris'; 'viirs'}; % for use in determining that we've extracted the xml from all the necessary instrument databases
+    V = {'mnemonic', 'type', 'APID', 'byte_bit', 'units', 'conversion', 'description'}; % var names for wrtietable. Loop invariet, so eave it here
     
     for j = 1:lenDnT
         % iterate through all chosen XML root dirs, where each one is specific to an instrument or the spacecraft bus. 
@@ -55,30 +58,30 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
         % refers to only one directory.
         
         dname = dnames_tot{j}; % the directory name for the root of the XML file tree.
-                
+        
+
         if ~isSC, d = dir([dname '/**/*.xml']); % get dir info for all subdirs too. specify wildcard to avoid '..' and '.'
         else
             try d = dir([dname '/TlmUnit/*.xml']); % Only use the Tlm Unit dir for SC, since the others contain information not pertitnent to these tools
             catch
                 h = errordlg('Incorrect Tlm Database. Please use a Tlm database in its original file tree structure.');
                 uiwait(h)
-                return
+                continue
             end
         end    
         
-        if size(unique(char(d.folder), 'rows'), 1) > 1 % they chose a root directory of a huge file tree.
+        if size(unique(char(d.folder), 'rows'), 1) > 1 % they chose a root directory of a huge file tree containing more than one instrument/SC's database xml 
             h = errordlg('Please choose directory containing only one instrument or purely spacecraft XML files');
             uiwait(h)
             continue
         end
-        
+
         dnames = lower([d.folder]); % str of sub directory name. THis is called dnames, as for SCi databases, there are sometimes many subdirs
 
-        
         if ~isSC, instr = insNames(ismember(insNames, strsplit(dnames, {'_', '-'}))); % figure out which instrument we are dealing with if this is a Sci database
-        else, instr = getScName(dname); % figure out whic SC we are looking at if this is a SC database. THis info is located in the VersionNameXML folder.
+        else, [instr, fname_out] = getScName(dname); % figure out whic SC we are looking at, and what version of the database this is (for the file naming of the csv) if this is a SC database. THis info is located in the VersionNameXML folder.
         end
-        
+
         if ~isSC && (isempty(instr) || length(instr)~=1)
             h = errordlg('Please choose a correct directory. It must contain XML files from only one instrument');
             uiwait(h)
@@ -90,54 +93,67 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
         %Therefore we don't have to check tat the user got all of the required XMLs, and can set isMember to 1 always, signalling that the user chose the corret folder for the correct SC.       
         else, isMember = 1; mInd = 1;
         end
-        
+
         if isMember
             insArrDone{j} = insArr(mInd);
         else
             insArrDone{j} = '';
         end % use this to make sure user picked at least the correct instruments, could pick others as well 
-        
+
         fnames = fullfile({d.folder},{d.name}); % all filenames with full path
 
-        T = []; % cant preallocate. We dont know the size
-        h = waitbar(0, ['Reading ' instr ' XML files']);
-        len = length(fnames);
         
-        if isSC % decide if we need to decode science database xml or spacecraft database xml. St the correct function to use accordingly, because the formats are very different
-            xml2ArrFun = @xml2ArrSC;
-        else
-            xml2ArrFun = @xml2ArrSci;
+        if ~isSC % we know the filename to use based on the versio number XML for SC databases
+            spl = strsplit(dname ,{'/','\'}); % split the dirname from the path for writing purposes
+            fname_out = spl{end};
         end
-        
-        
-        for i = 1:len 
-            
-            tmp = xml2ArrFun(fnames{i}, dname);  % use the function handle specifed above to decode the xml into a lookup table csv formt 
-            
-            try waitbar(i/len, h); 
-            catch; end
-            
-            if isempty(tmp), continue; end % useless file for decom -- there was only heade info, which is not needed
-           
-            T = [T; tmp]; % append the extracted table
-            
-        end
-        
-        try delete(h)
-        catch; end
-        
-        V = {'mnemonic', 'type', 'packet', 'byte_bit', 'units', 'conversion', 'description'}; 
-        
-        spl = strsplit(dname ,{'/','\'}); % split the dirname from the path for writing purposes
-        
-        fnames_out{j} = spl{end}; % add the output filename and its correspoinding instrument name to the output cell array
+
+        fnames_out{j} = fname_out; % add the output filename and its corresponding instrument name to the output cell array for runDecom or getCalibMat.
         ins_names_out{j} = instr;
         
-        writetable(array2table(T(:,1:4),'VariableNames', V(1:4)), ['../Decom_tools/database_CSVs/' spl{end} '.csv'], 'Delimiter', ','); 
-        writetable(array2table(T,'VariableNames', V), ['DBD_CSVs/' spl{end} '.csv'], 'Delimiter', ';'); 
+        % if the files already exist, skip re-writing it to save time (just return the ae so runDecom can copy it into the decom engine's DB folder).
+        % Allow writeCSVforDecom to move the existing file into the
+        % databases folder for the decomm engine
 
+        if ~( exist(['../Decom_tools/database_CSVs/' fname_out '.csv'], 'file') && exist(['DBD_CSVs/' fname_out '.txt'], 'file') )
+            
+
+            T = []; % cant preallocate. We dont know the size
+            h = waitbar(0, ['Reading ' instr ' XML files']);
+            len = length(fnames);
+
+            if isSC % decide if we need to decode science database xml or spacecraft database xml. St the correct function to use accordingly, because the formats are very different
+                xml2ArrFun = @xml2ArrSC;
+            else
+                xml2ArrFun = @xml2ArrSci;
+            end
+
+
+            for i = 1:len 
+
+                tmp = xml2ArrFun(fnames{i}, dname);  % use the function handle specifed above to decode the xml into a lookup table csv formt 
+
+                try waitbar(i/len, h); 
+                catch; end
+
+                if isempty(tmp), continue; end % useless file for decom -- there was only heade info, which is not needed
+
+                T = [T; tmp]; % append the extracted table
+
+            end
+
+            try delete(h)
+            catch; end
+
+            
+            % write the databases as a csv
+            writetable(array2table(T(:,1:4),'VariableNames', V(1:4)), ['../Decom_tools/database_CSVs/' fname_out '.csv'], 'Delimiter', ','); 
+            writetable(array2table(T,'VariableNames', V), ['DBD_CSVs/' fname_out '.txt'], 'Delimiter', ';'); 
+            
+        end
   
     end
+    
     
     insArrDone = lower(strip(string(insArrDone))); % coerce into string array
     insArrDone = insArrDone( ~strcmp(insArrDone, "")); % remove empty strings
@@ -158,14 +174,20 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
     end
 end
 
-function scName = getScName(dname)
+function [scName, vNum] = getScName(dname)
 
-% extract the SC name from the VersionNameXML file. THis will be of form
+% extract the SC name and version number for the file naming scheme from the VersionNameXML file. THis will be of form
 % J1, J2, ...
     vsName = xml2struct(fullfile(dname, 'VersionNameXML', 'VersionName.xml')); % extract the version name struct
     
-    scName = lower(vsName.VerUnit.EqId); % this field will be of form J1, J2, .... Make it lowercase for the decomm engine's convention 
+    vsName = vsName.VerUnit;
+    
+    scName = lower(vsName.EqId); % this field will be of form J1, J2, .... Make it lowercase for the decomm engine's convention 
 
+    vDate = strsplit(vsName.EffectiveDate, 'T'); % date of creation of this database, split on the time part of the name . For future use in this program of automatically deteting the correct database to use for data
+    vDate = vDate{1};
+    vNum = [vsName.VersionName '_' vDate]; % create a more useful filename for the csv 
+    
 end
 
 function T = xml2ArrSci(file, varargin)
@@ -333,14 +355,15 @@ function mi = fixConvRuleAndValAndByteBitAndUnpackRule(mi)
         mi.Units = mi.conversionRule.polynomial.finalUnits; % extract units
 
         % create conversion string 'c0=num c1=num...' for calibratedata()
-        fn = fieldnames(mi.conversionRule.polynomial.coefficientSet); % coefficient_0, coefficient_1...
+        coeffStruct = mi.conversionRule.polynomial.coefficientSet;
+        fn = fieldnames(coeffStruct) ;% coefficient_0, coefficient_1...
         len= length(fn);
-        coeffArr = cell(len, 1); 
-        coeffStruct = mi.conversionRule.polynomial.coefficientSet; 
-        for i = 1:len % need this loop as dynamic struct access cannot be vetorized
-            coeffArr{i} = coeffStruct(fn{i});        
+        coeffArr = cell(len, 1);
+        for i = 1:len % need this loop as dynamic struct access cannot be vectorized
+            coeffArr{i} = coeffStruct.(fn{i});        
         end
-        mi.conversion = strjoin(strcat('c'+string(0:len-1) + '=', coeffArr ), ' '); % join the string into the conventional c0=<num> c1=<num> ... format
+        convNums = string(0:len-1);
+        mi.conversion = char(strjoin(strcat('c'+ convNums' + '=', coeffArr ), ' ') ); % join the string into the conventional c0=<num> c1=<num> ... format
         mi = rmfield(mi, 'conversionRule'); % remove uneeded field
     end
     % (byte:bit) conversion to original form

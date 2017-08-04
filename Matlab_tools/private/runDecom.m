@@ -4,43 +4,110 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     % newDBfun - function handle to a functions that updates the DBDptr and
     % DBname
     
-    % SC database
-    if ~exist('../Decom_tools/databases/*database.csv', 'file') || isempty(handles.DBname)% if there is no DB for the decom, prompt for one by default
+    currSupportedInstr = 'atms, omps, ceres'; % add more as we get more capabilities
+    
+    [sciDbNeeded, scNeededFlag] = checkDBs(currSupportedInstr); % check for which Sci DBs we need
+    
+    if ~exist('../Decom_tools/databases/*database.csv', 'file') && isempty(handles.DBname)% if there is no DB of any kind for the decom, prompt for all of them by default
         handles = newDBfun(hObject, eventdata, handles); % update the handles pointer
         
-    
+        if isempty(handles.DBDptr), return; end % user cancelled
         
-    else % give the option to use the existing one
-        f = figure('name', 'Database Options');
+        writeCSVForDecom(currSupportedInstr) % place all the science DBs in the right place
+    
+    elseif ~isempty(sciDbNeeded) || scNeededFlag % there are some dbs, but not all of them 
+        
+        if ~isempty(sciDbNeeded) % if sci DB(s) needed
+            writeCSVForDecom(sciDbNeeded);
+        end
+        
+        if scNeededFlag % if sc DB needed
+             handles = newDBfun(hObject, eventdata, handles); % update the handles pointer
+        end
+        
+    else % give the option to use the existing DB, or choose a new one
+        
+        % create uibutton group  figure window
+        f = figure('name', 'Spacecraft Database Options');
         set(f, 'MenuBar', 'none')
         set(f, 'ToolBar', 'none')
         
         h = uibuttongroup('parent', f);
         
-        uicontrol('Style', 'radio', 'String', ...
-            ['Use current database: ' handles.DBname],...
-            'pos', [10 350 1000 20], 'tag', 'b1', 'parent', h);
+        uicontrol('Style', 'radio', 'String', ... % use current SC DB
+            ['Use current SC database: ' handles.DBname],...
+            'pos', [10 400 1000 20], 'tag', 'b1', 'parent', h);
         
-        uicontrol('Style', 'radio', 'String', 'Get new database',...
-            'pos',[10 250 1000 20], 'tag', 'b2', 'parent', h);
+        uicontrol('Style', 'radio', 'String', 'Get new SC database',... % choose new SC DB
+            'pos',[10 350 1000 20], 'tag', 'b2', 'parent', h);
         
-        b3 = uicontrol('Style', 'PushButton', 'String','Ok', ...
-            'pos', [10 150 100 20], 'Callback' ,@b3Callback, 'parent', h);
+        uicontrol('Style', 'checkbox', 'String', 'Get new ATMS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
+            'pos', [10 300 1000 20], 'tag', 'atms', 'parent', h)
+        
+        uicontrol('Style', 'checkbox', 'String', 'Get new OMPS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
+            'pos', [10 250 1000 20], 'tag', 'omps', 'parent', h)
+        
+        uicontrol('Style', 'checkbox', 'String', 'Get new CERES database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
+            'pos', [10 200 1000 20], 'tag', 'ceres', 'parent', h)
+        
+        uicontrol('Style', 'checkbox', 'String', 'Get new VIIRS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
+            'pos', [10 150 1000 20], 'tag', 'viirs', 'parent', h, 'enable', 'off') % TODO Eneble once Viirs DB works  
+        
+        uicontrol('Style', 'checkbox', 'String', 'Get new CRiS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
+            'pos', [10 100 1000 20], 'tag', 'cris', 'parent', h, 'enable', 'off')         % TODO Eneble once CRiS DB works 
+        
+        b3 = uicontrol('Style', 'PushButton', 'String','Ok', ... % also choose/not choose Sci DB
+            'pos', [10 50 100 20], 'Callback' ,@b3Callback, 'parent', h);
+        
+        
         
         uiwait(f)
-        if ~isvalid(f), return; end
-        b = get(b3, 'UserData');
+        
+        if ~isvalid(f), return; end % user cancelled
+        
+        bStruct = get(b3, 'UserData'); % contains the SC database choice, as well as sci
+        
         close(f)
         
-        if strcmp(b, 'b2')
+        if strcmp(bStruct.sel, 'b2') % SC database choice
             handles = newDBfun(hObject, eventdata, handles);
         end
+        
+        if ~isempty(bStruct.insStr)
+            writeCSVForDecom(bStruct.insStr);
+        end
+        
 
+
+
+    end
+    
+    function b3Callback(src, event)
+        % for use in proc_bin_button_Callback
+        sel = get(get(get(src, 'Parent'), 'SelectedObject'), 'tag');
+        
+        children = get(get(src, 'Parent'), 'Children'); 
+        sciBs = children(2:6); % all the children representing science button options
+        
+        insStr = {}; % this will be turned into a comma-separated list of instrument names for writeCSVForDecom 
+        
+        for sciB = sciBs
+            if get(sciB, 'value')
+                insStr = {insStr{:}, get(sciB, 'tag')}; % The tags of the buttons have been named according to their instrument
+            end
+        end
+        
+        toReturn = struct('sel', sel, 'insStr', strjoin(insStr, ', ')); % create struct for User Data field of b4, so it can be accessed after this function returns.
+        
+        set(src, 'UserData', toReturn)
+
+        
+        uiresume()
     end
    
     if isempty(handles.DBDptr), return; end      
     
-    % these next few blocks call the  CXXDecomQt executable, waits for it to exit, then this
+    % these next few blocks call the  CXXDecomQt executable, wait for it to exit, then this
     % script waits for the python to exit.
      
     % if this is a UNIX system, MATLAB's version of Qt will by default take
@@ -183,11 +250,44 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     
     msgbox(['Data files have been written to ' fullfile(pwd,'data', scid, date)])
     
-    function b3Callback(src, event)
-    % for use in proc_bin_button_Callback
-        str = get(get(get(src, 'Parent'), 'SelectedObject'), 'tag');
-        set(src, 'UserData', str)
-        uiresume()
-    end
 
+
+end
+
+function [dbNeeded, scNeededFlag] = checkDBs(currSupportedInstr)
+% check if the databases exist for all supported instrumen science,
+% specified by thecomma separated list 'supporteedInstr'
+    
+    insList = strip(string(strsplit(currSupportedInstr, ','))); % extract a string array from the comma separated list
+
+    % get a list of all the files to check for existence
+    files = fullfile('../Decom_tools/databases', cellstr(insList + 'database.csv'));
+    
+    dbNeeded = {};
+    
+    % loop through al of the files an check for thei existence
+    for i = 1:length(files)
+        file = files{i}; % extract full path and file name with extension
+        ins = insList{i}; % extract just ins name
+    
+        % check if the file exists, if it does, ad it to the list
+        if ~exist(file, 'file'), dbNeeded = {dbNeeded{:}, ins};
+        end
+    end
+    
+    dbNeeded = strjoin(dbNeeded, ', '); % place it back in a list for writeCSVForDecom
+    
+    scNeededFlag = 0; 
+    
+    nppDB = '../Decom_tools/databases/nppdatabase';
+    j1DB = '../Decom_tools/databases/j1database';
+    j2DB = '../Decom_tools/databases/j2database';
+    j3DB = '../Decom_tools/databases/j3database';
+    j4DB = '../Decom_tools/databases/j4database';
+    
+    % check if at least one of these files exists
+    if ~( exist(nppDB, 'file') || exist(j1DB, 'file') || exist(j2DB, 'file') ...
+            || exist(j3DB, 'file') || exist(j4DB, 'file') )
+        scNeededFlag = 1;
+    end
 end
