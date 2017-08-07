@@ -149,25 +149,25 @@ function fname = writeCSVForDecom(varargin)
     else % Usage for XML science or Tlm database
         ins_needed = varargin{1} ;% comma separated string of instrument names needed for science databases
         
-        [fnames, ins_written] = xml2CSV(ins_needed); % write CSVs (or just get the names if they already exist), get the file basenames
-        if isempty(fnames), return; end
+        [fname, ins_written] = xml2CSV(ins_needed); % write CSVs (or just get the names if they already exist), get the file basenames. fname is actually an array
+        if isempty(fname), return; end
         
-        for i = 1:length(fnames) % place all of the DBs in decom databases folder
+        for i = 1:length(fname) % place all of the DBs in decom databases folder
             
             ins = ins_written{i}; % strip the first layer of cell array wrappers
             if iscell(ins), ins = ins{1}; end% sometimes 9not always) there is an extra layer of cell array. This only happens when there is more than one instrument returned
             
-            fname = fnames{i};% for spacecraft, this return value will be used in the getCalibMat function
+            fnameI = fname{i};% for spacecraft, this return value will be used in the getCalibMat function
             
             if exist(['../Decom_tools/databases/' ins 'database.csv'], 'file')
                 delete(['../Decom_tools/databases/' ins 'database.csv'])
             end
             
             if ispc
-                system(['copy /Y ' fullfile('..\Decom_tools\database_CSVs',strcat(fname, '.csv')) ' ..\Decom_tools\databases\' ins 'database.csv']); 
+                system(['copy /Y ' fullfile('..\Decom_tools\database_CSVs',strcat(fnameI, '.csv')) ' ..\Decom_tools\databases\' ins 'database.csv']); 
             % put the csv in the right place with the right name for decom tool
             else
-                system(['cp -f ' fullfile('../Decom_tools/database_CSVs', [fname '.csv']) ' ../Decom_tools/databases/' ins 'database.csv']); 
+                system(['cp -f ' fullfile('../Decom_tools/database_CSVs', [fnameI '.csv']) ' ../Decom_tools/databases/' ins 'database.csv']); 
 
             end
             

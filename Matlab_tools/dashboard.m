@@ -242,7 +242,8 @@ function pushbutton8_Callback(hObject, eventdata, handles) % FFT PUSHBUTTON
         uiresume()
     end
 
-    start = startStop(1); stop = startStop(2);
+    start = startStop(1);
+    stop = startStop(2);
 
     inds = origInds(start):origInds(stop); % the range of row indices to use in the data matrix
     numRows = length(inds); % number of samples in Fourier Transform
@@ -265,6 +266,8 @@ function pushbutton8_Callback(hObject, eventdata, handles) % FFT PUSHBUTTON
 
     fft_plot1 = fft(handles.telemdata1(inds,handles.indiciesA5)); % only take the specified rows from the slider
 
+    nf
+    size(fft_plot1)
     f1=fft_plot1(1:nf, :);
     
     fmag1=2*abs(f1)/numRows;
@@ -573,7 +576,7 @@ function pushbutton9_Callback(hObject, eventdata, handles)
     %handles.pktcount = handles.telem(:,4); % hours
     handles.sec1 = double((handles.millisec1 / 1000) + (handles.micsec1 / 1000000)); % seconds since midnight that day
     
-    handles.delta_t1 = mean((handles.dates1(2:end)*86400 + handles.sec1(2:end)) -...
+    handles.delta_t1 = median((handles.dates1(2:end)*86400 + handles.sec1(2:end)) -...
         (handles.dates1(1:end-1)*86400 + handles.sec1(1:end-1))); % get a more robust freq measurement this way
 
     
@@ -1631,7 +1634,7 @@ function pushbutton16_Callback(hObject, eventdata, handles) % LOAD AUX FILE #1
     handles.sec2 = double((handles.millisec2 / 1000) + (handles.micsec2 / 1000000)); % setting time vector
    
 
-    handles.delta_t2 = mean( (handles.dates2(2:end)*86400 + handles.sec2(2:end)) -...
+    handles.delta_t2 = median( (handles.dates2(2:end)*86400 + handles.sec2(2:end)) -...
         (handles.dates2(1:end-1)*86400 + handles.sec2(1:end-1)) ); % get a more robust freq measurement this way
         
     set(handles.text18,'string',['Avg Aux1 Rate: ',num2str(1/handles.delta_t2),' HZ']);
@@ -1716,7 +1719,7 @@ function pushbutton17_Callback(hObject, eventdata, handles)
     handles.micsec3 = handles.telemdata3(: ,3);
     handles.sec3 = double((handles.millisec3 ./ 1000) + (handles.micsec3 ./ 1000000)); % setting time vector
 
-    handles.delta_t3 = mean((handles.dates3(2:end)*86400 + handles.sec3(2:end)) -...
+    handles.delta_t3 = median((handles.dates3(2:end)*86400 + handles.sec3(2:end)) -...
         (handles.dates3(1:end-1)*86400 + handles.sec3(1:end-1))); % get a more robust freq measurement this way
         
     set(handles.text19,'string',['Avg Aux2 Rate: ',num2str(1/handles.delta_t3),' HZ']); % 

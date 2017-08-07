@@ -94,8 +94,10 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         
         insStr = {}; % this will be turned into a comma-separated list of instrument names for writeCSVForDecom 
         
-        for sciB = sciBs
-            if get(sciB, 'value')
+        for j = 1:length(sciBs)
+            
+            sciB = sciBs(j);
+            if strcmp(get(sciB, 'enable'), 'on') && get(sciB, 'value')
                 insStr = {insStr{:}, get(sciB, 'tag')}; % The tags of the buttons have been named according to their instrument
             end
         end

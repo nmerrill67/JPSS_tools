@@ -186,7 +186,7 @@ function param = getSingleParam(granule, paramInd, parByteSize, parBits, numType
         
         tmpType = ['uint' tmpSize]; 
         % read in slightly too much data. Convert to bits in place
-        bits = de2bi(swapbytes(typecast(granule((paramIndByte):(paramIndByte + parByteSize - 1)) , tmpType)), 'left-msb');
+        bits = d2b(swapbytes(typecast(granule((paramIndByte):(paramIndByte + parByteSize - 1)) , tmpType)));
         %exract our bits, converting back to base ten
         param = bits(paramIndBit:(paramIndBit + parByteSize*8 + parBits - 1)); 
         
@@ -294,8 +294,8 @@ function playBack(handles)
                 offset = offset + uint32(nextPktSize) + primHdrPlus1 ;  % Add five to account for the primary header minus 1
 
                 first2bytes = swapbytes(typecast(granule(currInd:currInd+1), 'uint16'));% fist bytes contains the flag for if there is a secondary hdr, and APID
-                bits = de2bi(first2bytes, 'left-msb');
-                APID_found = bi2de(bits(end-10:end),  'left-msb'); % APID found in packet
+                bits = d2b(first2bytes);
+                APID_found = b2d(bits(end-10:end)); % APID found in packet
 
                 if APID_found ~= handles.APID
                     error('Error parsing packets: APID is inconsitent in headers. Is this the correct database?')

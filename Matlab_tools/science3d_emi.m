@@ -326,7 +326,7 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 
             gap_delta = handles.time(2:end) - handles.time(1:(end-1)); % dt vector throughout. an index indicating a gap in this vector is the start index for the gap in the time vector    
 
-            if 0 % any(gap_delta > two_scans)
+            if any(gap_delta > two_scans)
                 gapInds = find(gap_delta > two_scans); % find the startInds of the gaps
                 one_scan = 0.0180/86400;  % time of one scan in days  
                 gapTimes = handles.time(gapInds);
@@ -334,7 +334,17 @@ function pushbutton1_Callback(hObject, eventdata, handles)
                 num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan ); % vector of number of missed scans (scalar if only one gap in data)
                 filler = mean(mean(data(:, floor(3*size(data,2)/4):end))); % choose a fill data value from scan data
                 for i = 1:length(num_missed_scans)    
-                    fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i));
+                    try
+                        fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i));
+                    catch
+                    
+                        h = errordlg(['Time gaps in data for ' datestr(gapTimes(i), 'dd/mmm/yyyy HH:MM:SS') ...
+                            'are too large to generate fill data. Please consider decomming a subset of this dataset.']);
+                        uiwait(h)
+                        continue
+                        
+                    end
+                    
                     handles.time((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i) - 1)) = fill_times;% fix the timestamps
                     %datestr(fill_times, 'HH:MM:SS')
                     data((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i) - 1), :) = filler*ones(num_missed_scans(i), handles.cols);  % fill with NaN so Matlab skips it in the plot

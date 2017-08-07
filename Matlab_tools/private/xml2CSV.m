@@ -12,7 +12,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
     insArrDone = cell(lenIA, 1); % Place finished instrument names here
 
     isSC = 0; % used to determine how to decode xml. SC xml is different than Science
-    if strcmp(insStr, 'spacecraft'), isSC = 1; end 
+    if strcmpi(insStr, 'spacecraft'), isSC = 1; end 
     
     isCorrectDirCount = 0;
 
@@ -26,9 +26,9 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
             uiwait(h)
             dnames_tot = uipickfiles('FilterSpec', 'DBD_XML', 'Prompt', ['Choose the directories for at least ' insStr ' science XML databases']);
         else
-            h = msgbox('Choose the directory containing the required Spacecraft database'); 
+            h = msgbox('Choose the directory containing the required Spacecraft Telemetry XML database'); 
             uiwait(h)
-            dnames_tot = string(uigetdir('DBD_XML', 'Choose the directory containing the required Spacecraft database')); % convert the output to string so that the length comparison is not based on number of chars in string
+            dnames_tot = string(uigetdir('DBD_XML', 'Choose the directory containing the required Spacecraft Telemetry XML database')); % convert the output to string so that the length comparison is not based on number of chars in string
         end
         
         lenDnT = length(dnames_tot);
@@ -87,10 +87,22 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
         else, [instr, fname_out] = getScName(dname); % figure out whic SC we are looking at, and what version of the database this is (for the file naming of the csv) if this is a SC database. THis info is located in the VersionNameXML folder.
         end
 
+            
+        
         if ~isSC && (isempty(instr) || length(instr)~=1)
+            
             h = errordlg('Please choose a correct directory. It must contain XML files from only one instrument');
             uiwait(h)
+            insArrDone{j} = '';
             continue
+            
+        elseif isSC && (isempty(instr) || isempty(fname_out))
+            % the error dlg for this error is handled in getScName. Just
+            % iterate to the next loop and the user will be prompted to try
+            % again
+            insArrDone{j} = '';
+            continue
+            
         end
 
         if ~isSC, [isMember, mInd] = ismember(instr, insArr);
@@ -159,22 +171,26 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
   
     end
     
+    insArrDone = lower(strip(string(insArrDone))) ;% coerce into string array
+    insArrDone = insArrDone( ~strcmp(insArrDone, "")) ;% remove empty strings
+
+    if isempty(ismember(insArrDone, insArr)) || ~all(ismember(insArrDone, insArr)) % double check that the user picked the right instrument DBs. the ismember call is empty when insArrDone is empty
     
-    insArrDone = lower(strip(string(insArrDone))); % coerce into string array
-    insArrDone = insArrDone( ~strcmp(insArrDone, "")); % remove empty strings
-    
-    if ~all(ismember(insArrDone, insArr)) % double check that the user picked the right instrument DBs
+        if ~isSC
+            [~, unFinInd] = ismember(insArr, insArrDone); % find out which instruments have not been selected
+            insArrNotDone = insArr(unFinInd == 0);
+            insArrNotDone = strjoin(insArrNotDone, ', '); % place in comma separated string 
+        else
+            insArrNotDone = 'spacecraft';
+        end
         
-        [~, unFinInd] = ismember(insArr, insArrDone); % find out which instruments have not been selected
-        insArrNotDone = insArr(unFinInd == 0);
-        insArrNotDone = strjoin(insArrNotDone, ', '); % place in comma separated string 
-        h = errordlg(['You did not choose the prompted instruments. Decom cannot continue without' insArrNotDone ' databases']);
+        h = errordlg(['You did not choose the prompted instruments. Decom cannot continue without ' insArrNotDone ' databases. You will be prompted to retry.']);
         uiwait(h)
         
         [fnames_out_recurse, ins_names_out_recurse] = xml2CSV(insArrNotDone); % recursively call to get the unfinished names
         
-        fnames_out = strip(string(char(fnames_out{:}, fnames_out_recurse{:}))); % append to this call's output. There may be recursion depth > 1
-        ins_names_out = strip(string(char(ins_names_out{:}, ins_names_out_recurse{:}))); 
+        fnames_out = {fnames_out{:}, fnames_out_recurse{:}}; % append to this call's output. There may be recursion depth > 1
+        ins_names_out = {ins_names_out{:}, ins_names_out_recurse{:}}; 
         
     end
 end
@@ -183,7 +199,17 @@ function [scName, vNum] = getScName(dname)
 
 % extract the SC name and version number for the file naming scheme from the VersionNameXML file. THis will be of form
 % J1, J2, ...
-    vsName = xml2struct(fullfile(dname, 'VersionNameXML', 'VersionName.xml')); % extract the version name struct
+    vsFileName = fullfile(dname, 'VersionNameXML', 'VersionName.xml');
+    
+    if ~exist(vsFileName, 'file')
+        h = errordlg('Incorrect database. You may have accidentally chosen a science database in stead of a spacecraft telemetry database.');
+        uiwait(h)
+        scName = '';
+        vNum = '';
+        return
+    end
+
+    vsName = xml2struct(vsFileName); % extract the version name struct
     
     vsName = vsName.VerUnit;
     
