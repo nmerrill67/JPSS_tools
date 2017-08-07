@@ -25,7 +25,10 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
             h = msgbox(['Choose the directories for at least ' insStr ' science XML databases']);
             uiwait(h)
             dnames_tot = uipickfiles('FilterSpec', 'DBD_XML', 'Prompt', ['Choose the directories for at least ' insStr ' science XML databases']);
-        else, dnames_tot = string(uigetdir('DBD_XML', 'Choose the directory containing the required Spacecraft database')); % convert the output to string so that the length comparison is not based on number of chars in string
+        else
+            h = msgbox('Choose the directory containing the required Spacecraft database'); 
+            uiwait(h)
+            dnames_tot = string(uigetdir('DBD_XML', 'Choose the directory containing the required Spacecraft database')); % convert the output to string so that the length comparison is not based on number of chars in string
         end
         
         lenDnT = length(dnames_tot);
@@ -62,15 +65,17 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
 
         if ~isSC, d = dir([dname '/**/*.xml']); % get dir info for all subdirs too. specify wildcard to avoid '..' and '.'
         else
-            try d = dir([dname '/TlmUnit/*.xml']); % Only use the Tlm Unit dir for SC, since the others contain information not pertitnent to these tools
+            try 
+                d = dir([dname '/Tlm*/*.xml']); % Only use the Tlm dir for SC, since the others contain information not pertitnent to these tools
+                
             catch
-                h = errordlg('Incorrect Tlm Database. Please use a Tlm database in its original file tree structure.');
+                h = errordlg(['Incorrectly formatted XML file tree. Please check that the folder TlmUnit or TlmXML exists under ' dname]);
                 uiwait(h)
-                continue
+                return
             end
         end    
         
-        if size(unique(char(d.folder), 'rows'), 1) > 1 % they chose a root directory of a huge file tree containing more than one instrument/SC's database xml 
+        if ~isSC && size(unique(char(d.folder), 'rows'), 1) > 1 % they chose a root directory of a huge file tree containing more than one instrument/SC's database xml 
             h = errordlg('Please choose directory containing only one instrument or purely spacecraft XML files');
             uiwait(h)
             continue
@@ -215,6 +220,16 @@ function T = xml2ArrSci(file, varargin)
     
     for i = 1:length(m) 
         mi = fixConvRuleAndValAndByteBitAndUnpackRule(m{i}); % fix up the struct to a useable format
+        
+        % CERES calls science points by the mnemonic N/A (useless I know). So I throw the
+        % descriptin in for the mnemonic, splitting on the comma as to not
+        % cause issues with reading csv for the decomm engine
+        if strcmp(mi.fieldMnemonic, 'N/A')
+            newMnem = strsplit(mi.fieldDescription, ','); % pull out the description, split it
+            newMnem = newMnem{1}; % leave out whats after the comma
+            mi.fieldMnemonic = newMnem; % reset the mnemonic to the description, so people can actually tell what they are looking at. Instead of just 'N/A'
+        end
+        
         mi.Packet = ['APID' repelem('0' ,4-length(apid)) apid]; % APID
         tmp = struct2cell(mi);
         T(i, :) = strip(string(char(tmp)))'; % put it in the array
@@ -234,6 +249,7 @@ function T = xml2ArrSC(file, varargin)
     % varargin -- used to pass the string of the root directory name of the xml file tree 
     % T - lookup table part with column order  {'mnemonic', 'type', 'packet', 'byte_bit', 'units', 'conversion', 'description'}
 
+    
     
     root = varargin{1}; % get the root dir of the xml dir tree 
     

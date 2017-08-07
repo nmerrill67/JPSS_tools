@@ -150,7 +150,6 @@ function fname = writeCSVForDecom(varargin)
         ins_needed = varargin{1} ;% comma separated string of instrument names needed for science databases
         
         [fnames, ins_written] = xml2CSV(ins_needed); % write CSVs (or just get the names if they already exist), get the file basenames
-        
         if isempty(fnames), return; end
         
         for i = 1:length(fnames) % place all of the DBs in decom databases folder

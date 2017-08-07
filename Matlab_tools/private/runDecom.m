@@ -6,9 +6,10 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     
     currSupportedInstr = 'atms, omps, ceres'; % add more as we get more capabilities
     
-    [sciDbNeeded, scNeededFlag] = checkDBs(currSupportedInstr); % check for which Sci DBs we need
+    [sciDbNeeded, scNeededFlag, scidInDB] = checkDBs(currSupportedInstr); % check for which Sci DBs we need
     
     if ~exist('../Decom_tools/databases/*database.csv', 'file') && isempty(handles.DBname)% if there is no DB of any kind for the decom, prompt for all of them by default
+        
         handles = newDBfun(hObject, eventdata, handles); % update the handles pointer
         
         if isempty(handles.DBDptr), return; end % user cancelled
@@ -16,6 +17,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         writeCSVForDecom(currSupportedInstr) % place all the science DBs in the right place
     
     elseif ~isempty(sciDbNeeded) || scNeededFlag % there are some dbs, but not all of them 
+        
         
         if ~isempty(sciDbNeeded) % if sci DB(s) needed
             writeCSVForDecom(sciDbNeeded);
@@ -26,6 +28,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         end
         
     else % give the option to use the existing DB, or choose a new one
+        
         
         % create uibutton group  figure window
         f = figure('name', 'Spacecraft Database Options');
@@ -121,7 +124,6 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         % appended to the front of the path, the program still crashes
         setenv('LD_LIBRARY_PATH', [QTDIR '/plugins/platforms']); 
         system('cd ../Decom_tools && ./CXXDecomQt/build/bin/CXXDecomQt && cd ../Matlab_tools');
-
     else
     
         system('cd ..\Decom_tools && CXXDecomQtWin\CXXDecomQt.exe && cd ..\Matlab_tools');
@@ -130,8 +132,17 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         setenv('LD_LIBRARY_PATH', LD_LIBRARY_PATH); % set the path back to the original
     end
     
-    if ~exist('../Decom_tools/output', 'dir'), return; end % user stopped python execution of CXXDecomQt
+    if ~exist('../Decom_tools/output', 'dir'), return; end % user stopped execution of CXXDecomQt
        
+    if exist('../Decom_tools/output/Error_Log.txt', 'file')
+     % the error log is for debugging Decom. We dont want to move it into the data directory by accident, so rename it
+        if isunix, system('mv ../Decom_tools/output/Error_Log.txt ../Decom_tools/output/Error_Log'); 
+
+        
+        else, system('move ..\Decom_tools\output\Error_Log.txt ..\Decom_tools\output\Error_Log'); 
+
+        end
+    end
     
     f2 = dir('../Decom_tools/output/*.txt');
     f2 = [f2.name]; % all the txt filenames in ../Decom_tools/output
@@ -146,18 +157,41 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     % he/she wants
     
     datesF = '../Decom_tools/output/datesFile.dat';
-    if ~exist(datesF, 'file'), return ; end % make sure it exists
+    dfExists = exist(datesF, 'file');
+    if dfExists % OMPS, or ATMS files have date in the name, so use that. Otherwise it is CERES or CriS data, which doesnt have a useful naming scheme in any shape or form
     
-    id = fopen(datesF);
-    line1 = fgetl(id); % get the first and only line from the file
-    fclose(id);
+        id = fopen(datesF);
+        line1 = fgetl(id); % get the first and only line from the file
+        fclose(id);
+
+        delete(datesF); % delete this file. We dont need it anymore
+
+        namesWithPath = strsplit(line1, '.h5'); % get the basnames of the two filenames, with full  path
+        [~,baseName1] = fileparts(namesWithPath{1}); % strip the path
+        [~,baseName2] = fileparts(namesWithPath{2});
     
-    delete(datesF); % delete this file. We dont need it anymore
-    
-    namesWithPath = strsplit(line1, '.h5'); % get the basnames of the two filenames, with full  path
-    [~,baseName1] = fileparts(namesWithPath{1}); % strip the path
-    [~,baseName2] = fileparts(namesWithPath{2});
-    
+    else % CERES, CRiS, or whoever else doest use h5
+        % we need to go into one of the text files, read in the first and
+        % last line to get the start and end time
+        fTmp = {f2.name};
+        f1 = fTmp{1}; % get one filename from the output to get the times
+        numL = perl('countLines.pl'); % This perl function quickely counts the number of lines in the file
+        line1 = dlmread(f1, ',', [1 0 1 2]); % Read first data line, and just the first three cols to get the time and date
+        lineN = dlmread(f1, ',', [numL-1 0 numL-1 2]) % read the last line, first three cols
+        
+        t1 = line1(1) + line1(2)/86400000 + line1(3)/86400000000; % convert to days
+        t2 = lineN(1) + lineN(2)/86400000 + lineN(3)/86400000000; % convert to days
+        
+        % create a fake base filename for below to extract the date;
+        % scidInDb is just the scid found in the database that the user
+        % chose. THere is no other way to tell which SCID we have.
+        baseName1 = ['_' scidInDb '_d' datestr(t1, 'yyyymmdd') '_t' datestr(t1, 'HHMMSSF')]; 
+        baseName2 = ['_' scidInDb '_d' datestr(t2, 'yyyymmdd') '_t' datestr(t2, 'HHMMSSF')]; 
+        
+        % TODO test this
+
+    end
+        
     vec = strsplit(baseName1, '_'); % split filename based on '_' character to see the SCID. Assume that there is only one SCID in data
     
     % find out what sc the data is from
@@ -254,7 +288,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
 
 end
 
-function [dbNeeded, scNeededFlag] = checkDBs(currSupportedInstr)
+function [dbNeeded, scNeededFlag, scidInDB] = checkDBs(currSupportedInstr)
 % check if the databases exist for all supported instrumen science,
 % specified by thecomma separated list 'supporteedInstr'
     
@@ -279,15 +313,21 @@ function [dbNeeded, scNeededFlag] = checkDBs(currSupportedInstr)
     
     scNeededFlag = 0; 
     
-    nppDB = '../Decom_tools/databases/nppdatabase';
-    j1DB = '../Decom_tools/databases/j1database';
-    j2DB = '../Decom_tools/databases/j2database';
-    j3DB = '../Decom_tools/databases/j3database';
-    j4DB = '../Decom_tools/databases/j4database';
+    nppDB = '../Decom_tools/databases/nppdatabase.csv';
+    j1DB = '../Decom_tools/databases/j1database.csv';
+    j2DB = '../Decom_tools/databases/j2database.csv';
+    j3DB = '../Decom_tools/databases/j3database.csv';
+    j4DB = '../Decom_tools/databases/j4database.csv';
     
+    scids = {'npp', 'j01', 'j02', 'j03', 'j04'};
+    
+    existArr = [exist(nppDB, 'file')>0, exist(j1DB, 'file')>0, exist(j2DB, 'file')>0 ...
+            ,exist(j3DB, 'file')>0, exist(j4DB, 'file')>0]; % logical array
+    
+    scidInDB = scids{existArr}; % This is only used for CERES and CriS, since they dont have this info in the filename
+        
     % check if at least one of these files exists
-    if ~( exist(nppDB, 'file') || exist(j1DB, 'file') || exist(j2DB, 'file') ...
-            || exist(j3DB, 'file') || exist(j4DB, 'file') )
+    if any(existArr)
         scNeededFlag = 1;
     end
 end

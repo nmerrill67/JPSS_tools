@@ -1,6 +1,4 @@
 [submodule "CXXDecomQt"]
 	path = Decom_tools/CXXDecomQt
 	url = https://github.com/gabegordon/CXXDecomQt.git
-[submodule "RealTimeTools"]
-	path = RealTimeTools
-	url = https://github.com/MWalker1380/RealTimeTools.git
+

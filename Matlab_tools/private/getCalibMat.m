@@ -1,10 +1,10 @@
 function [DBDptr, fname] = getCalibMat()
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % requests and parses a database definition file in csv format.
-        % must be the flight tlm sheet or the test tlm sheet exported to csv, but can have
-        % columns in any order (Future releases may do this, but not sure)
-        % DBDptr     cell array - the matrix of [units conversion mnemonic description S/S type APID (byte:bit)] 
-        % filename - name of DB file stripped of extension 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % requests and parses a database definition file in csv format.
+    % must be the flight tlm sheet or the test tlm sheet exported to csv, but can have
+    % columns in any order (Future releases may do this, but not sure)
+    % DBDptr     cell array - the matrix of [units conversion mnemonic description S/S type APID (byte:bit)] 
+    % filename - name of DB file stripped of extension 
         
     pwd; % there is some sort of matlab bug where if this pwd comman is missing, it randomly does not reckognize that the working directory is .. whaen this private funct is called
     
@@ -62,12 +62,19 @@ function [DBDptr, fname] = getCalibMat()
     filename = fullfile(pwd, 'DBD_CSVs',strcat(fname, '.txt'));
 
     h = waitbar(0, 'Loading Database ...');
-    % Parse each line of the data 
-    DBDptr = readtable(filename, 'delimiter', ';');  % leave DBDptr as a struct for quick field access
-    waitbar(1/2, h)
-
-    waitbar(3/4, h)
+    % Read the database csv, leave as a table struct for faster field
+    % accessing
+    DBDptr = readtable(filename, 'delimiter', ';');
     
-    waitbar(1, h)
-    delete(h)
+    try
+        waitbar(1/2, h)    
+
+        waitbar(3/4, h)
+
+        waitbar(1, h)
+
+        delete(h)
+    catch
+    % do nothing fo waitbar errors    
+    end
 end
