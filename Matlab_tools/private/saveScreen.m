@@ -2,12 +2,9 @@ function saveScreen(varargin)
 % shared function for taking good quality pictures of the current figure
 % screen. It is basically a shared callback function for all tool screens
 
-    % all pictures saved to .../Matlab_tools/SAVED_SCREENS
+    % all pictures saved to <PATH_TO>/Matlab_tools/SAVED_SCREENS
     
-    % this function is in the helperFunctions dir, but it is called in the
-    % Matlab_tools root, so that is the working directory for this
-    % function, hence referencing helperFunctions as a sub directory
-    
+
     if nargin > 0
         f = figure('name', 'Database Options');
         set(f, 'MenuBar', 'none')

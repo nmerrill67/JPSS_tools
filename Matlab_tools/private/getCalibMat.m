@@ -16,8 +16,8 @@ function [DBDptr, fname_SC] = getCalibMat()
     
     f = figure('name', 'Database Options');
     set(f, 'MenuBar', 'none')
-    set(f, 'ToolBar', 'none')
-    
+    set(f, 'Position', [100 100 500 600])
+
 
 
 
@@ -48,7 +48,7 @@ function [DBDptr, fname_SC] = getCalibMat()
     uicontrol('Style', 'checkbox', 'String', 'Load VIIRS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
         'pos', [10 150 1000 20], 'tag', 'viirs', 'parent', h, 'enable', 'off') % TODO Eneble once Viirs DB works  
 
-    uicontrol('Style', 'checkbox', 'String', 'Load CRiS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
+    uicontrol('Style', 'checkbox', 'String', 'Load CrIS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
         'pos', [10 100 1000 20], 'tag', 'cris', 'parent', h, 'enable', 'off')         % TODO Eneble once CRiS DB works 
 
 

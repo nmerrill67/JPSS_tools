@@ -321,38 +321,86 @@ function pushbutton1_Callback(hObject, eventdata, handles)
             % number of rows to jump when going to next slice
             handles.index = floor((handles.rows)/handles.slices);    
 
-            % check for gaps - if there are, generate fill records 
-            two_scans = 0.0180 * 2 / 86400; % set up 2 scans as limit of acceptability delta time (in days)
+            % check for gaps - if there are, generate fill records. THis is
+            % usefull for comparing aux data to the science, as when there
+            % are data gaps, the timelines do not match up correctly. 
+            
+            two_scans = (2.667 + 0.1) * 2 / 86400; % set up 2 scans as limit of acceptability delta time (in days). Add tolerance of 0.1 sec
 
-            gap_delta = handles.time(2:end) - handles.time(1:(end-1)); % dt vector throughout. an index indicating a gap in this vector is the start index for the gap in the time vector    
-
+            gap_delta = diff(handles.time); % dt vector throughout. an index indicating a gap in this vector is the start index for the gap in the time vector    
+            max(gap_delta)
+            % check for the gaps in the data
+            
             if any(gap_delta > two_scans)
                 gapInds = find(gap_delta > two_scans); % find the startInds of the gaps
-                one_scan = 0.0180/86400;  % time of one scan in days  
-                gapTimes = handles.time(gapInds);
+                one_scan = 2.667/86400;  % time of one scan in days  
+                gapTimes = handles.time(gapInds); % times in the time vector containing the start of a gap
                 %datestr(gapTimes,'HH:MM:SS')
-                num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan ); % vector of number of missed scans (scalar if only one gap in data)
-                filler = mean(mean(data(:, floor(3*size(data,2)/4):end))); % choose a fill data value from scan data
-                for i = 1:length(num_missed_scans)    
-                    try
-                        fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i));
-                    catch
+                num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan - 1); % vector of number of missed scans (scalar if only one gap in data)
+                
+                num_scans_in_a_day = 32396;
+                
+                if any(num_missed_scans > num_scans_in_a_day) 
                     
-                        h = errordlg(['Time gaps in data for ' datestr(gapTimes(i), 'dd/mmm/yyyy HH:MM:SS') ...
-                            'are too large to generate fill data. Please consider decomming a subset of this dataset.']);
-                        uiwait(h)
-                        continue
+                    h = errordlg('There is a time gap of over a day in this data. Fill data will not be generated. Please consider decomming a subset of this data for better viewing quality');
+                    uiwait(h)
+                    
+                else
+                
+                    filler = mean(mean(data(:, floor(3*size(data,2)/4):floor(7*end/8)))); % choose a fill data value from scan data (scalar value)
+                    
+                    % Preallocate tmp arrays so matlab doesnt have to
+                    % allocate a new array every loop iteration
+                    addedLength = sum(num_missed_scans);
+                    tmpData = zeros(handles.rows + addedLength, handles.cols);
+                    tmpTime = zeros(handles.rows + addedLength, 1);
+                    
+                    clc
+                    disp 'orig Length'
+                    handles.rows
+                    disp 'added L + orig'
+                    handles.rows + addedLength
+                    
+                    prevIndOrig = 1; % index of previous start of the extraction from original array. Starts at 1 so that the data can be copied from the beginning, then moves on to the index of the last gap + 1
+                    prevIndTmp = 1; % index of the start of insert for the current insertion of fill data and fake data mixed.
+
+                    for i = 1:length(num_missed_scans) 
+
+                        gapIndsI = gapInds(i); % faster to store this value since it is accessed so many times
+
+                        fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i)); % create fake time for filling in
+                         % datestr(fill_times, 'HH:MM:SS')
+                         
+                        %%%%% TODO FIX THIS %%%%%%%%%%%%%%%%%%%%%
+                        try 
+                            assert( all( tmpTime(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig)) == 0 ) )
+                        catch
+                            i = i
+                            l_nms = length(num_missed_scans)
+                            disp 'attempted access'
+                            (prevIndTmp + gapIndsI - prevIndOrig)
+                            %tmpTime(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig))
+                            return
                         
+                        end
+                        
+                        tmpTime(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig)) = handles.time(prevIndOrig:gapIndsI); % copy over the non-gapped data
+                        tmpTime((prevIndTmp - prevIndOrig + gapIndsI + 1):(prevIndTmp - prevIndOrig + gapIndsI + num_missed_scans(i) )) = fill_times; % copy over generated data
+                        
+                        tmpData(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig), :) = data(prevIndOrig:gapIndsI, :);
+                        tmpData((prevIndTmp - prevIndOrig + gapIndsI + 1):(prevIndTmp - prevIndOrig + gapIndsI + num_missed_scans(i) ), :) = filler * ones(num_missed_scans(i), handles.cols);  % create fake data. It wll be monochromatic, but will leave the colormap relatively the same as with no fill data
+                     
+                        prevIndOrig = gapIndsI + 1;
+                        prevIndTmp = prevIndTmp + gapIndsI + num_missed_scans(i);
+
                     end
+
                     
-                    handles.time((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i) - 1)) = fill_times;% fix the timestamps
-                    %datestr(fill_times, 'HH:MM:SS')
-                    data((gapInds(i) + 1):(gapInds(i) + num_missed_scans(i) - 1), :) = filler*ones(num_missed_scans(i), handles.cols);  % fill with NaN so Matlab skips it in the plot
+                    data = tmpData; % copy back over, then the tmps will go out of scope and be deleted
+                    handles.time = tmpTime;
+                    % find(handles.time == 0)
                 end
-
-                handles.rows = size(data, 1); % update size
             end
-
 
             if handles.cols == 300
                 % Diag data
@@ -411,7 +459,11 @@ function pushbutton2_Callback(varargin)
     
     currslice = str2double(get(handles.edit4, 'string'));
    
-    
+    if currslice > handles.slices
+        currslice = handles.slices;
+        set(handles.edit4, 'string', num2str(currslice))
+    end
+        
     endInd = handles.index*currslice; % Last row index in slice
     if handles.main_file
         if endInd > length(handles.time)
@@ -659,7 +711,7 @@ function pushbutton2_Callback(varargin)
                 else
                     end_position = 104;
                 end
-
+                % counts(startInd:endInd, 1:end_position) 
                 surf(1:end_position, handles.time(startInd:endInd), ...
                     counts(startInd:endInd, 1:end_position) ...
                     ,'EdgeColor','None', 'FaceColor', 'flat'); %  modify the col to zoom in scan (ie. 1:20)

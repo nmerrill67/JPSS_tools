@@ -236,7 +236,8 @@ function playBack(handles)
 
         
         for granNum=0:maxGran
-          granule = getGranule(handles.rdrType, granNum, file);
+            
+            granule = getGranule(handles.rdrType, granNum, file);
 
             % get the tracker index, which is the index of the data fiel that contains the index of the start of the APID's first packet 
             % 21 is the offest between the APID list start and the tracker index
@@ -396,7 +397,6 @@ function playBack(handles)
                 
                 guidata(handles.axes1, handles); % allows guifunction to update the graphics
 
-                
                 % TODO change this to real time. Maybbe increase max for
                 % playback rate options
                 pause(0.1/handles.playback_rate);
@@ -494,8 +494,6 @@ function pushbutton5_Callback(hObject, eventdata, handles)
     % Please see http://www.regular-expressions.info/numericranges.html for
     % how this regexp works
     handles.DBDptr = DBDptr(~cellfun(@isempty, regexp(DBDptr.APID, 'APID06[0-4][0-9]|APID05[4-9][0-9]', 'match')), :); 
-    
-    handles.DBDptr.APID
     set(handles.popupmenu2, 'string', handles.DBDptr.description)
     guidata(hObject, handles)
 

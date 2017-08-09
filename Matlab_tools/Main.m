@@ -58,7 +58,7 @@ handles.output = hObject;
 [jpssImg, map] = imread('JPSS.tif');
 
 axes(handles.axes2)
-imshow(jpssImg(:,:,1:3), map)
+imshow(jpssImg(:,:,1:3), map) % Show the JPSS image
 
 % Update handles structure
 guidata(hObject, handles);
@@ -76,7 +76,6 @@ function varargout = Main_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
-cd ../RealTimeTools
 
 
 
@@ -92,7 +91,7 @@ function pushbutton6_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-    OMPS_Window
+    Online_OMPS_Window
 
 % --- Executes on button press in pushbutton7.
 function pushbutton7_Callback(hObject, eventdata, handles)
@@ -127,9 +126,8 @@ function pushbutton12_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton12 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-    cd ../Matlab_tools
     
-    dashboard
+    dashboard % run the dashboard, which is the head of the CAT
 
 % --- Executes on button press in pushbutton14.
 function pushbutton14_Callback(hObject, eventdata, handles)

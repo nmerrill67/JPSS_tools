@@ -34,6 +34,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         f = figure('name', 'Spacecraft Database Options');
         set(f, 'MenuBar', 'none')
         set(f, 'ToolBar', 'none')
+        set(f, 'Position', [100 100 500 600])
         
         h = uibuttongroup('parent', f);
         
@@ -56,7 +57,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         uicontrol('Style', 'checkbox', 'String', 'Get new VIIRS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
             'pos', [10 150 1000 20], 'tag', 'viirs', 'parent', h, 'enable', 'off') % TODO Eneble once Viirs DB works  
         
-        uicontrol('Style', 'checkbox', 'String', 'Get new CRiS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
+        uicontrol('Style', 'checkbox', 'String', 'Get new CrIS database', ... % choose new Sci DB (optional, hence its a check box instead of radio button)
             'pos', [10 100 1000 20], 'tag', 'cris', 'parent', h, 'enable', 'off')         % TODO Eneble once CRiS DB works 
         
         b3 = uicontrol('Style', 'PushButton', 'String','Ok', ... % also choose/not choose Sci DB
@@ -179,7 +180,7 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         f1 = fTmp{1}; % get one filename from the output to get the times
         numL = perl('countLines.pl'); % This perl function quickely counts the number of lines in the file
         line1 = dlmread(f1, ',', [1 0 1 2]); % Read first data line, and just the first three cols to get the time and date
-        lineN = dlmread(f1, ',', [numL-1 0 numL-1 2]) % read the last line, first three cols
+        lineN = dlmread(f1, ',', [numL-1 0 numL-1 2]) ;% read the last line, first three cols
         
         t1 = line1(1) + line1(2)/86400000 + line1(3)/86400000000; % convert to days
         t2 = lineN(1) + lineN(2)/86400000 + lineN(3)/86400000000; % convert to days
