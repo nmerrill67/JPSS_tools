@@ -64,6 +64,16 @@ function saveAsPPTX(prevPath, plotfun, textbox, fig, time, hObject, eventdata, h
     for i = 1:len
         
         fnamei = fname{i};
+        
+        % TODO add more capabilities. This requires changing the plotting
+        % functiions as well, since different instruments have different
+        % formatted data
+        if ~contains(fnamei, 'ATMS')
+            h = errordg('PowerPoint exporting only currently supported for ATMS Science');
+            uiwait(h)
+            return
+        end
+        
         T = readtable(fullfile(fpath, fnamei), 'delimiter',',', 'readVariableNames', 0); % get the specific data
         
         if any(isnan(T{:,end}))

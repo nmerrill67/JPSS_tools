@@ -173,7 +173,7 @@ function pushbutton1_Callback(hObject, eventdata, handles)
     handles.main_file = 1;
     data = readtable(fullfile(path, name), 'delimiter',','); % Whole Matrix
     
-    varNames= string(data.Properties.VariableNames); % names in first row
+    varNames= string(data.Properties.VariableNames)'; % names in first row
     
     data = table2array(data); % convert to regular matrix
     
@@ -243,7 +243,7 @@ function pushbutton1_Callback(hObject, eventdata, handles)
                       
             
             handles.slices = handles.rows; % one OMPS img per row
-            handles.index = 1 ; % number of rows to jump when going to next slice AKA next row
+            handles.index = 1 ; % number of rows to jump when going to next slice AKA next row. Thi field is used more for ATMS science data, where you need to jump 300 rows
             pixVars = regexp(varNames, 'Pixel[_]?[0-9]*', 'match'); % find all pixel variables. the _<number> is added on by matlab since the pixel varname repeats
             pixVars = strip(string([pixVars{:}]')); % coerce to string array
             
@@ -316,89 +316,95 @@ function pushbutton1_Callback(hObject, eventdata, handles)
             
             
             % Used to Slice up Data
-            handles.slices = floor(handles.rows/400); % always want about 400 scans per slice
+            handles.slices = floor(handles.rows/300); % always want about 300 scans per slice
 
             % number of rows to jump when going to next slice
-            handles.index = floor((handles.rows)/handles.slices);    
+            handles.index = 300;    
 
             % check for gaps - if there are, generate fill records. THis is
             % usefull for comparing aux data to the science, as when there
             % are data gaps, the timelines do not match up correctly. 
-            
+
             two_scans = (2.667 + 0.1) * 2 / 86400; % set up 2 scans as limit of acceptability delta time (in days). Add tolerance of 0.1 sec
 
             gap_delta = diff(handles.time); % dt vector throughout. an index indicating a gap in this vector is the start index for the gap in the time vector    
-            max(gap_delta)
+
+
             % check for the gaps in the data
-            
+
             if any(gap_delta > two_scans)
+
+                h = warndlg('There are time gaps in this data. Fill data is being generated to preserve the timeline. It will show up as monochromatic. Note that this is  not from sensor noise');
+                uiwait(h)
+
+
+
                 gapInds = find(gap_delta > two_scans); % find the startInds of the gaps
                 one_scan = 2.667/86400;  % time of one scan in days  
                 gapTimes = handles.time(gapInds); % times in the time vector containing the start of a gap
                 %datestr(gapTimes,'HH:MM:SS')
                 num_missed_scans = floor( (handles.time(gapInds+1) - gapTimes)/one_scan - 1); % vector of number of missed scans (scalar if only one gap in data)
-                
+
                 num_scans_in_a_day = 32396;
-                
+
                 if any(num_missed_scans > num_scans_in_a_day) 
-                    
+
                     h = errordlg('There is a time gap of over a day in this data. Fill data will not be generated. Please consider decomming a subset of this data for better viewing quality');
                     uiwait(h)
-                    
+
                 else
-                
+
+
                     filler = mean(mean(data(:, floor(3*size(data,2)/4):floor(7*end/8)))); % choose a fill data value from scan data (scalar value)
-                    
+
                     % Preallocate tmp arrays so matlab doesnt have to
                     % allocate a new array every loop iteration
                     addedLength = sum(num_missed_scans);
-                    tmpData = zeros(handles.rows + addedLength, handles.cols);
-                    tmpTime = zeros(handles.rows + addedLength, 1);
-                    
-                    clc
-                    disp 'orig Length'
-                    handles.rows
-                    disp 'added L + orig'
-                    handles.rows + addedLength
-                    
+                    handles.rows = handles.rows + addedLength;
+                    tmpData = zeros(handles.rows, handles.cols);
+                    tmpTime = zeros(handles.rows, 1);
+
                     prevIndOrig = 1; % index of previous start of the extraction from original array. Starts at 1 so that the data can be copied from the beginning, then moves on to the index of the last gap + 1
                     prevIndTmp = 1; % index of the start of insert for the current insertion of fill data and fake data mixed.
 
                     for i = 1:length(num_missed_scans) 
 
                         gapIndsI = gapInds(i); % faster to store this value since it is accessed so many times
+                        nmsI = num_missed_scans(i);
 
-                        fill_times = gapTimes(i) + one_scan * (1:num_missed_scans(i)); % create fake time for filling in
+                        fill_times = gapTimes(i) + one_scan * (1:nmsI)'; % create fake time for filling in
                          % datestr(fill_times, 'HH:MM:SS')
-                         
-                        %%%%% TODO FIX THIS %%%%%%%%%%%%%%%%%%%%%
-                        try 
-                            assert( all( tmpTime(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig)) == 0 ) )
-                        catch
-                            i = i
-                            l_nms = length(num_missed_scans)
-                            disp 'attempted access'
-                            (prevIndTmp + gapIndsI - prevIndOrig)
-                            %tmpTime(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig))
-                            return
-                        
-                        end
-                        
+
+                        % make sure this code is correct, and that we are
+                        % not overwriting any data with this assert
+                        assert( all( tmpTime(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig)) == 0 ) )
+
+
                         tmpTime(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig)) = handles.time(prevIndOrig:gapIndsI); % copy over the non-gapped data
-                        tmpTime((prevIndTmp - prevIndOrig + gapIndsI + 1):(prevIndTmp - prevIndOrig + gapIndsI + num_missed_scans(i) )) = fill_times; % copy over generated data
-                        
+                        tmpTime((prevIndTmp - prevIndOrig + gapIndsI + 1):(prevIndTmp - prevIndOrig + gapIndsI + nmsI )) = fill_times; % copy over generated data
+
                         tmpData(prevIndTmp:(prevIndTmp + gapIndsI - prevIndOrig), :) = data(prevIndOrig:gapIndsI, :);
-                        tmpData((prevIndTmp - prevIndOrig + gapIndsI + 1):(prevIndTmp - prevIndOrig + gapIndsI + num_missed_scans(i) ), :) = filler * ones(num_missed_scans(i), handles.cols);  % create fake data. It wll be monochromatic, but will leave the colormap relatively the same as with no fill data
-                     
+                        tmpData((prevIndTmp - prevIndOrig + gapIndsI + 1):(prevIndTmp - prevIndOrig + gapIndsI + nmsI ), :) = filler * ones(nmsI, handles.cols);  % create fake data. It wll be monochromatic, but will leave the colormap relatively the same as with no fill data
+
                         prevIndOrig = gapIndsI + 1;
-                        prevIndTmp = prevIndTmp + gapIndsI + num_missed_scans(i);
+
+                        if i == 1 
+                            prevIndTmp = prevIndTmp + gapIndsI + nmsI;
+                        else
+                            prevIndTmp = prevIndTmp + gapIndsI - gapInds(i-1) + nmsI; % there will be gaps of zeros in the arrays if we dont do this (check it on paper)
+                        end
 
                     end
 
-                    
+                    % copy over the last few rows of data after the last
+                    % gap
+                    tmpTime(prevIndTmp:end) = handles.time(prevIndOrig:end);
+                    tmpData(prevIndTmp:end, :) = data(prevIndOrig:end, :);
+
+
                     data = tmpData; % copy back over, then the tmps will go out of scope and be deleted
                     handles.time = tmpTime;
-                    % find(handles.time == 0)
+                    assert(all(handles.time > 0))
                 end
             end
 
@@ -411,6 +417,8 @@ function pushbutton1_Callback(hObject, eventdata, handles)
                handles.counts = data(:, 108:211); % 211 to include calibration positions or 204 for earth scan only
                handles.angle = data(:,4:107);
             end
+            
+
             
         otherwise 
             
@@ -439,12 +447,18 @@ function pushbutton2_Callback(varargin)
         hObject = varargin{1};
         eventdata = varargin{2};
         handles = varargin{3};
-        counts = handles.counts;
+        if isfield(handles, 'counts'), counts = handles.counts; end
     else % called from saveAsPPTX
         hObject = varargin{1};
         eventdata = varargin{2};
-        handles = varargin{3};
-        counts = varargin{4}(:,108:211);
+        handles = varargin{3};        
+        if isfield(handles, 'counts')
+            counts = varargin{4};
+        else 
+            h = errordlg('Please load and plot science data once before exporting to PPTX');
+            uiwait(h)
+        end
+
     end
 
     if ~(handles.main_file || handles.sc_file)
@@ -464,6 +478,23 @@ function pushbutton2_Callback(varargin)
         set(handles.edit4, 'string', num2str(currslice))
     end
         
+    %First row index in slice
+    if currslice == 1
+        startInd = 1;
+    else
+        startInd = handles.index*(currslice - 1);
+    end
+    
+    if handles.main_file
+        if startInd > length(handles.time)
+            startInd = length(handles.time) - 300; % handle overshooting the end of the array
+        end
+    else
+        if startInd > length(handles.time_sc)
+            startInd = length(handles.time_sc) - 300;
+        end
+    end
+    
     endInd = handles.index*currslice; % Last row index in slice
     if handles.main_file
         if endInd > length(handles.time)
@@ -474,13 +505,7 @@ function pushbutton2_Callback(varargin)
             endInd = length(handles.time_sc);
         end
     end
-    %First row index in slice
-    
-    if currslice == 1
-        startInd = 1;
-    else
-        startInd = handles.index*(currslice - 1);
-    end
+
     
     
     startIndAux = startInd ;% align timestamps
@@ -493,9 +518,6 @@ function pushbutton2_Callback(varargin)
         [~, endIndAux] = min(abs(handles.time_sc - handles.time(endInd)));
         
     end  
-
-    
-    %datestr(handles.time(find(isnan(handles.counts(:,1)))), 'HH:MM:SS')
 
     % Plot right window
 
@@ -533,7 +555,7 @@ function pushbutton2_Callback(varargin)
         plot(data1, X1, 'Linewidth', 1.5);
         set(handles.axes8, 'YTickLabelRotation', 45)  
         set(handles.axes8, 'YTickLabelMode', 'auto')  
-        axis(handles.axes8, [mean(mean(data1))-1 mean(max(data1))+1 X1(1)-1 X1(end)+1])
+        axis(handles.axes8, [mean(mean(data1))-1 mean(max(data1))+1 X1(1) X1(end)])
         h = legend(x1label, 'Location', 'Best');
         set(h, 'Interpreter', 'none')   
         title('AUX 1 Data')
@@ -559,7 +581,7 @@ function pushbutton2_Callback(varargin)
 
         set(handles.axes7, 'YTickLabel', [])
         %datestr(X1, 'HH:MM:SS')
-        axis(handles.axes7, [min(min(data2))-1 max(max(data2))+1 X1(1)-1 X1(end)+1])
+        axis(handles.axes7, [min(min(data2))-1 max(max(data2))+1 X1(1) X1(end)])
         h = legend(x2label, 'Location', 'Best');
         set(h, 'Interpreter', 'none')       
         title('AUX 2 Data')
@@ -583,7 +605,7 @@ function pushbutton2_Callback(varargin)
         plot(data3,X1, 'Linewidth', 1.5);
         set(handles.axes5, 'YTick', [])    
         set(handles.axes5, 'YTickLabel', [])
-        axis(handles.axes5, [max(min(data3))-1 max(max(data3))+1 X1(1)-1 X1(end)+1])
+        axis(handles.axes5, [max(min(data3))-1 max(max(data3))+1 X1(1) X1(end)])
         h = legend(x3label, 'Location', 'Best');
         set(h, 'Interpreter', 'none') 
         
@@ -606,7 +628,7 @@ function pushbutton2_Callback(varargin)
         yticks(handles.axes6, 'auto')    
         set(handles.axes6, 'YTickLabelRotation', 45)
 
-        axis(handles.axes6, [min(min(data4))-1 max(max(data4))+1 X1(1)-1 X1(end)+1])
+        axis(handles.axes6, [min(min(data4))-1 max(max(data4))+1 X1(1) X1(end)])
         h = legend(x4label, 'Location', 'Best');
         set(h, 'Interpreter', 'none')
        
@@ -624,6 +646,7 @@ function pushbutton2_Callback(varargin)
     if handles.main_file
                 
       
+        
         switch handles.instr
             
             case 'ATMS'
@@ -712,10 +735,12 @@ function pushbutton2_Callback(varargin)
                     end_position = 104;
                 end
                 % counts(startInd:endInd, 1:end_position) 
-                surf(1:end_position, handles.time(startInd:endInd), ...
+                surf(handles.axes3, 1:end_position, handles.time(startInd:endInd), ...
                     counts(startInd:endInd, 1:end_position) ...
-                    ,'EdgeColor','None', 'FaceColor', 'flat'); %  modify the col to zoom in scan (ie. 1:20)
-              
+                    ,'EdgeColor','None', 'FaceColor', 'interp'); %  modify the col to zoom in scan (ie. 1:20)
+               
+
+                
                 view(2);
                 xlabel('Scan Position');
 
@@ -734,7 +759,7 @@ function pushbutton2_Callback(varargin)
                 set(handles.axes3, 'YTickLabelRotation', 45) 
                 set(handles.axes3, 'YTickMode', 'auto')        
                 datetick('y', 'HH:MM:SS', 'keeplimits', 'keepticks')
-                
+
                 grid(handles.axes8, 'on')
                 grid(handles.axes3, 'on')
                 grid(handles.axes5, 'on')
@@ -1093,10 +1118,10 @@ function pushbutton8_Callback(hObject, eventdata, handles)
     
     
     if ~handles.main_file
-        handles.slices = floor(handles.rows_sc/400); % always want about 400 scans per slice
+        handles.slices = floor(handles.rows_sc/300); % always want about 300 scans per slice
     end
         %    set(handles.text4, 'string', ['Number of Slices: ' num2str(handles.slices)])
-    handles.index = floor((handles.rows_sc)/handles.slices);
+    if ~handles.main_file, handles.index = 300; end
       
     
     % create empty fill data (NaN will plot as blank) to account for data
