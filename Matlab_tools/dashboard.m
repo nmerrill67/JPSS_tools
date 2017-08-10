@@ -202,14 +202,14 @@ function pushbutton8_Callback(hObject, eventdata, handles) % FFT PUSHBUTTON
         'position', [10, 300, 500, 40]);    
     
     uicontrol('style', 'text', 'String', 'FFT Start Time:', 'position', [10, 260, 75, 20]);
-    t11 = uicontrol('style', 'text', 'position',[100, 260, 75, 20], 'parent', f);    
+    t11 = uicontrol('style', 'text', 'position',[100, 260, 200, 20], 'parent', f);    
     s1 = uicontrol('style', 'slider', 'parent',f,...
         'position',[10 210 500 20], 'Min', 1, 'Max',  length(mins), 'SliderStep',...
         [0.004 0.1], 'Value', 1, 'Callback', @s1Callback, 'ButtonDownFcn', @s1Callback);
     set(t11, 'String', minsStr(floor(get(s1, 'Value')),:))
     
     uicontrol('style', 'text', 'String', 'FFT End Time:', 'position', [10, 160, 75, 20]);
-    t22 = uicontrol('style', 'text', 'position', [100, 160, 75, 20],'parent', f)    ;
+    t22 = uicontrol('style', 'text', 'position', [100, 160, 200, 20],'parent', f)    ;
     s2 = uicontrol('style', 'slider', 'parent', f, 'position',[10 110 500 20]...
         , 'Min', 1, 'Max',  length(mins), 'SliderStep', [0.004 0.1], 'Value', size(minsStr,1), ...
         'Callback', @s2Callback, 'ButtonDownFcn', @s2Callback );

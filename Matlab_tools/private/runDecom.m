@@ -327,9 +327,12 @@ function [dbNeeded, scNeededFlag, scidInDB] = checkDBs(currSupportedInstr)
     
     existArr = [exist(nppDB, 'file')>0, exist(j1DB, 'file')>0, exist(j2DB, 'file')>0 ...
             ,exist(j3DB, 'file')>0, exist(j4DB, 'file')>0] ; % logical array of existence for each database
+
+    scidInDB = '';
+    if any(existArr)
+        scidInDB = scids{existArr}; % This is only used for CERES and CriS, since they dont have this info in the filename
+    end
     
-    scidInDB = scids{existArr}; % This is only used for CERES and CriS, since they dont have this info in the filename
-        
     % check if at least one of these files exists
     if ~any(existArr)
         scNeededFlag = 1;
