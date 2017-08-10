@@ -2,14 +2,14 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
     % runs decom binaries and py script. newDBfun
     % hObject, eventdata, handles - all things from normal GUI callbacks
     % newDBfun - function handle to a functions that updates the DBDptr and
-    % DBname
+   
     
     currSupportedInstr = 'atms, omps, ceres'; % add more as we get more capabilities
     
     [sciDbNeeded, scNeededFlag, scidInDB] = checkDBs(currSupportedInstr); % check for which Sci DBs we need
     
-    if ~exist('../Decom_tools/databases/*database.csv', 'file') && isempty(handles.DBname)% if there is no DB of any kind for the decom, prompt for all of them by default
-        
+    if isempty(dir('../Decom_tools/databases/*database.csv')) && isempty(handles.DBname)% if there is no DB of any kind for the decom (checked usng glob), prompt for all of them by default
+
         handles = newDBfun(hObject, eventdata, handles); % update the handles pointer
         
         if isempty(handles.DBDptr), return; end % user cancelled
@@ -17,7 +17,6 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         writeCSVForDecom(currSupportedInstr) % place all the science DBs in the right place
     
     elseif ~isempty(sciDbNeeded) || scNeededFlag % there are some dbs, but not all of them 
-        
         
         if ~isempty(sciDbNeeded) % if sci DB(s) needed
             writeCSVForDecom(sciDbNeeded);
@@ -29,7 +28,6 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         
     else % give the option to use the existing DB, or choose a new one
         
-        
         % create uibutton group  figure window
         f = figure('name', 'Spacecraft Database Options');
         set(f, 'MenuBar', 'none')
@@ -37,6 +35,9 @@ function handles = runDecom(hObject, eventdata, handles, newDBfun)
         set(f, 'Position', [100 100 500 600])
         
         h = uibuttongroup('parent', f);
+        
+        uicontrol('Style', 'text', 'String', 'Choose desired SC Database', ...
+            'pos', [10 500 500 20], 'parent', h, 'fontweight', 'bold', 'fontsize', 12)
         
         uicontrol('Style', 'radio', 'String', ... % use current SC DB
             ['Use current SC database: ' handles.DBname],...
@@ -325,12 +326,12 @@ function [dbNeeded, scNeededFlag, scidInDB] = checkDBs(currSupportedInstr)
     scids = {'npp', 'j01', 'j02', 'j03', 'j04'};
     
     existArr = [exist(nppDB, 'file')>0, exist(j1DB, 'file')>0, exist(j2DB, 'file')>0 ...
-            ,exist(j3DB, 'file')>0, exist(j4DB, 'file')>0]; % logical array
+            ,exist(j3DB, 'file')>0, exist(j4DB, 'file')>0] ; % logical array of existence for each database
     
     scidInDB = scids{existArr}; % This is only used for CERES and CriS, since they dont have this info in the filename
         
     % check if at least one of these files exists
-    if any(existArr)
+    if ~any(existArr)
         scNeededFlag = 1;
     end
 end

@@ -63,6 +63,8 @@ imshow(jpssImg(:,:,1:3), map) % Show the JPSS image
 % Update handles structure
 guidata(hObject, handles);
 
+saveScreen
+
 % UIWAIT makes Main wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 

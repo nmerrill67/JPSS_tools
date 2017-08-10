@@ -108,7 +108,8 @@ function [DBDptr, fname_SC] = getCalibMat()
         return
     end
 
-    if iscell(fname_SC), fname_SC = [fname_SC{:}]; end % Remove all of the empy cells that xml2csv outpus, as readtable cannot read '<$PATH_TO>/.csv'
+    if iscell(fname_SC), fname_SC = [fname_SC{:}]
+    end % Remove all of the empy cells that xml2csv outpus, as readtable cannot read '<$PATH_TO>/.csv'
     
     filename_SC = fullfile(pwd, 'DBD_CSVs',strcat(fname_SC, '.txt'));
 

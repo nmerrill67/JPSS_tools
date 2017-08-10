@@ -3,6 +3,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
 % later Calibration use.
 % insStr - comma separated string of instrument databases needed
 
+    if iscell(insSstr), insStr = [insStr{:}]; end % This prevents errors later. Errordlg only takes char types, and a cell wrapper for char is matlab string
 
     insArr = lower(strip(string(strsplit(insStr, ',')))); % coerce comma separated list into string array 
     
@@ -183,8 +184,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
         else
             insArrNotDone = 'spacecraft';
         end
-        
-        h = errordlg(['You did not choose the prompted instruments. Decom cannot continue without ' insArrNotDone ' databases. You will be prompted to retry.']);
+        h = errordlg(['You did not choose the prompted instruments. Decom cannot continue without ' char(strjoin(insArrNotDone, ',')) ' databases. You will be prompted to retry.']);
         uiwait(h)
         
         [fnames_out_recurse, ins_names_out_recurse] = xml2CSV(insArrNotDone); % recursively call to get the unfinished names

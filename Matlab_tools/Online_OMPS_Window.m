@@ -22,7 +22,7 @@ function varargout = Online_OMPS_Window(varargin)
 
 % Edit the above text to modify the response to help Online_OMPS_Window
 
-% Last Modified by GUIDE v2.5 07-Aug-2017 12:42:36
+% Last Modified by GUIDE v2.5 10-Aug-2017 12:30:48
 
 % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -503,3 +503,11 @@ function pushbutton6_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton8.
+function pushbutton8_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    saveScreen
