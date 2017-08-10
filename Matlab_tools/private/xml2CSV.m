@@ -3,7 +3,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
 % later Calibration use.
 % insStr - comma separated string of instrument databases needed
 
-    if iscell(insSstr), insStr = [insStr{:}]; end % This prevents errors later. Errordlg only takes char types, and a cell wrapper for char is matlab string
+    if iscell(insStr), insStr = [insStr{:}]; end % This prevents errors later. Errordlg only takes char types, and a cell wrapper for char is matlab string
 
     insArr = lower(strip(string(strsplit(insStr, ',')))); % coerce comma separated list into string array 
     
