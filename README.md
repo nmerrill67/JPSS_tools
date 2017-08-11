@@ -2,7 +2,7 @@
 
 ## Setup
 
-Clone or download this repository into any directory.
+Clone or download this repository into any directory. Note that CXXDecomQt is a submodule, so UNIX users need to issue git clone --recursive https://github.com/nmerrill67/JPSS_tools.git to get it.
 
 Run setup.bat or setup.sh to setup all necessary directories
 
