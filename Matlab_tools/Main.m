@@ -63,7 +63,6 @@ imshow(jpssImg(:,:,1:3), map) % Show the JPSS image
 % Update handles structure
 guidata(hObject, handles);
 
-saveScreen
 
 % UIWAIT makes Main wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -136,3 +135,9 @@ function pushbutton14_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton14 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+    if isunix 
+        % Must have evince installed
+        ! evince Docs/User_Manual.pdf 
+    else % windows
+        ! .\Docs\User_Manual.pdf
+    end

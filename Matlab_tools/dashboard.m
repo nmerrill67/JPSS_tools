@@ -1872,9 +1872,9 @@ function pushbutton21_Callback(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
     if isunix 
         % Must have evince installed
-        ! evince Docs/BASIC_INSTRUCTIONS.pdf 
+        ! evince Docs/User_Manual.pdf 
     else % windows
-        ! .\Docs\BASIC_INSTRUCTIONS.pdf
+        ! .\Docs\User_Manual.pdf
     end
 end
 
