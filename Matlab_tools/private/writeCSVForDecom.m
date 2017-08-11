@@ -149,6 +149,17 @@ function fname = writeCSVForDecom(varargin)
     else % Usage for XML science or Tlm database
         ins_needed = varargin{1} ;% comma separated string of instrument names needed for science databases
         
+        % write csv for decom use
+        if ~exist('../Decom_tools/database_CSVs', 'dir')
+            mkdir ../Decom_tools/database_CSVs
+        end
+        if ~exist('../Decom_tools/databases', 'dir')
+            mkdir ../Decom_tools/databases
+        end
+        if ~exist('DBD_CSVs', 'dir')
+            mkdir DBD_CSVs
+        end
+        
         [fname, ins_written] = xml2CSV(ins_needed); % write CSVs (or just get the names if they already exist), get the file basenames. fname is actually an array
         if isempty(fname), return; end
         

@@ -165,6 +165,7 @@ function [fnames_out, ins_names_out] = xml2CSV(insStr)
 
             
             % write the databases as a csv
+            if ~exist('DBD_CSVs', 'dir'), system('mkdir DBD_CSVs'); end
             writetable(array2table(T(:,1:4),'VariableNames', V(1:4)), ['../Decom_tools/database_CSVs/' fname_out '.csv'], 'Delimiter', ','); 
             writetable(array2table(T,'VariableNames', V), ['DBD_CSVs/' fname_out '.txt'], 'Delimiter', ';'); 
             

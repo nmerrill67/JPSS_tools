@@ -5,7 +5,6 @@
 *.h5
 *.pkt
 *.png
-*.docx
 Decom_tools/data/*
 Decom_tools/output/*
 Matlab_tools/data/*
